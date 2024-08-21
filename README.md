@@ -25,6 +25,7 @@ environments of each stage.
 
 An instantiated project from LLMOps Stacks contains an ML pipeline with CI/CD workflows to test and deploy automated model training and batch inference jobs across your dev, staging, and prod Databricks workspaces. 
 
+<img src="https://github.com/databricks/mlops-stacks/blob/main/doc-images/mlops-stack-summary.png">
 <img src="https://docs.databricks.com/en/_images/llmops-rag-3p.png">
 
 Data scientists can iterate on ML code and file pull requests (PRs). This will trigger unit tests and integration tests in an isolated staging Databricks workspace. Model training and batch inference jobs in staging will immediately update to run the latest code when a PR is merged into main. After merging a PR into main, you can cut a new release branch as part of your regularly scheduled release process to promote ML code changes to production.
@@ -48,6 +49,35 @@ https://github.com/databricks/LLMOps-stacks/assets/87999496/0d220d55-465e-4a69-b
 
 
 [See this page](Pipeline.md) for detailed description and diagrams of the ML pipeline structure defined in the default stack. 
+
+## LLMOps changes to MLOps production architecture
+This section highlights the major changes to the MLOps reference architecture for LLMOps applications.
+
+### Model hub
+LLM applications often use existing, pretrained models selected from an internal or external model hub. The model can be used as-is or fine-tuned.
+
+Databricks includes a selection of high-quality, pre-trained foundation models in Unity Catalog and in Databricks Marketplace. You can use these pre-trained models to access state-of-the-art AI capabilities, saving you the time and expense of building your own custom models. For details, see [Pre-trained models in Unity Catalog and Marketplace](https://docs.databricks.com/en/generative-ai/pretrained-models.html). 
+
+### Vector database
+Some LLM applications use vector databases for fast similarity searches, for example to provide context or domain knowledge in LLM queries. Databricks provides an integrated vector search functionality that lets you use any Delta table in Unity Catalog as a vector database. The vector search index automatically syncs with the Delta table. For details, see [Vector Search](https://docs.databricks.com/en/generative-ai/vector-search.html).
+
+You can create a model artifact that encapsulates the logic to retrieve information from a vector database and provides the returned data as context to the LLM. You can then log the model using the MLflow LangChain or PyFunc model flavor.
+
+### Fine-tune LLM
+Because LLM models are expensive and time-consuming to create from scratch, LLM applications often fine-tune an existing model to improve its performance in a particular scenario. In the reference architecture, fine-tuning and model deployment are represented as distinct Databricks Jobs. Validating a fine-tuned model before deploying is often a manual process.
+
+Databricks provides Mosaic AI Model Training, which lets you use your own data to customize an existing LLM to optimize its performance for your specific application. For details, see [Mosaic AI Model Training](https://docs.databricks.com/en/large-language-models/foundation-model-training/index.html).
+
+### Model serving
+In the RAG using a third-party API scenario, an important architectural change is that the LLM pipeline makes external API calls, from the Model Serving endpoint to internal or third-party LLM APIs. This adds complexity, potential latency, and additional credential management.
+
+Databricks provides Mosaic AI Model Serving, which provides a unified interface to deploy, govern, and query AI models. For details, see [Mosaic AI Model Serving](https://docs.databricks.com/en/machine-learning/model-serving/index.html).
+
+### Human feedback in monitoring and evaluation
+Human feedback loops are essential in most LLM applications. Human feedback should be managed like other data, ideally incorporated into monitoring based on near real-time streaming.
+
+The Mosaic AI Agent Framework review app helps you gather feedback from human reviewers. For details, see [Get feedback about the quality of an agentic application](https://docs.databricks.com/en/generative-ai/agent-evaluation/human-evaluation.html).
+
 
 ## Using LLMOps Stacks
 
