@@ -25,7 +25,7 @@ environments of each stage.
 
 An instantiated project from LLMOps Stacks contains an ML pipeline with CI/CD workflows to test and deploy automated model training and batch inference jobs across your dev, staging, and prod Databricks workspaces. 
 
-<img src="doc-images/LLMOps-stack-summary.png">
+<img src="https://docs.databricks.com/en/_images/llmops-rag-3p.png">
 
 Data scientists can iterate on ML code and file pull requests (PRs). This will trigger unit tests and integration tests in an isolated staging Databricks workspace. Model training and batch inference jobs in staging will immediately update to run the latest code when a PR is merged into main. After merging a PR into main, you can cut a new release branch as part of your regularly scheduled release process to promote ML code changes to production.
 
