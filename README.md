@@ -1,6 +1,6 @@
 # Databricks MLOps Stacks
 
-> **_NOTE:_**  This feature is in [public preview](https://docs.databricks.com/release-notes/release-types.html).
+> **_NOTE:_**  This feature is in [private preview](https://docs.databricks.com/release-notes/release-types.html).
 
 This repo provides a customizable stack for starting new ML projects
 on Databricks that follow production best-practices out of the box.
