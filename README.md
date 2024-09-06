@@ -57,7 +57,7 @@ Advanced Prompt Engineering examples
 
 Here are some samples for inspiration, some of which might be a bit out of date. These are meant to serve as directional guidance but not necessarily line-for-line templates for our ultimate solution:
 
-Databricks Gen AI Cookbook
+[Databricks Gen AI Cookbook](https://ai-cookbook.io/index-2.html#)
 Databricks Gen AI Product Documentation
 DBDemos Rag Chatbot Example
 MLFlow Tracing for Agents
