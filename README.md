@@ -58,12 +58,12 @@ Advanced Prompt Engineering examples
 Here are some samples for inspiration, some of which might be a bit out of date. These are meant to serve as directional guidance but not necessarily line-for-line templates for our ultimate solution:
 
 [Databricks Gen AI Cookbook](https://ai-cookbook.io/index-2.html#)
-Databricks Gen AI Product Documentation
-DBDemos Rag Chatbot Example
-MLFlow Tracing for Agents
-MLOps Stacks
+[Databricks Gen AI Product Documentation](https://docs.databricks.com/en/generative-ai/generative-ai.html)
+[DBDemos Rag Chatbot Example](https://www.databricks.com/resources/demos/tutorials/data-science-and-ai/lakehouse-ai-deploy-your-llm-chatbot)
+[MLFlow Tracing for Agents](https://docs.databricks.com/en/mlflow/mlflow-tracing.html#enable-inference-tables-to-collect-traces)
+[MLOps Stacks](https://docs.databricks.com/en/machine-learning/mlops/mlops-stacks.html)
 
-
+## Main Components
 Using Databricks LLMOps Stacks, AI engineers can quickly get started iterating on ML code for new projects while ops engineers set up CI/CD and ML resources
 management, with an easy transition to production. You can also use LLMOps Stacks as a building block in automation for creating new data science projects with production-grade CI/CD pre-configured. More information can be found at https://docs.databricks.com/en/dev-tools/bundles/LLMOps-stacks.html.
 
