@@ -5,6 +5,65 @@
 This repo provides a customizable stack for starting new GenAI projects
 on Databricks that follow production best-practices out of the box.
 
+One of the largest current gaps in an organization’s ability to utilize the advantages of LLMs is the infrastructure and processes around how LLMs are deployed and managed. We hear overwhelming feedback from Data Scientists and stakeholders alike about the slow time to productionize, uncertainty in best practices, and a lack of transparency in the vision of the final product.
+
+We have a plan to address these concerns by providing a valuable template that demystifies the LLMOps process.
+
+## Vision
+
+We want to make an open source Databricks Asset Bundle (DAB) that deploys an easily understandable and readily adaptable end-to-end LLMOps pipeline. 
+
+It should be turnkey and immediately deployable in any Databricks workspace. It should include a working example of a RAG process and app, and surface a user interface automatically for immediate use by users with minimal development overhead. 
+
+The pipeline should conform to development, management, and governance best practices out of the box.
+
+## Key Components
+
+Corpus ingestion, cleaning, vectorization, and storage in Mosaic AI Vector Search
+RAG Pipeline for returning results from the Mosaic AI Vector Search
+RAG Automated Evaluation using both mlflow.evaluate and llm-as-a-judge
+Prod model Champion/Challenger comparison and analysis
+RAG Agent Serving using Databricks Model Serving Endpoints
+RAG Pipeline integration testing
+RAG Pipeline validation testing
+RAG Pipeline Unit Testing
+Chat Interface that is readily deployable for immediate use by stakeholders
+RAG Performance testing with results stored in a delta table
+RAG Model Drift testing with results stored in a delta table
+RAG Human Evaluation feedback mechanism with results stored in a delta table
+Model Monitoring Dashboard surfacing the testing and evaluation results
+CI/CD process for promotion through dev/staging/pro
+DAB project adaptation
+Important Items to Keep in Mind
+
+All pertinent artifacts and metrics must be logged in MLFlow.
+Unity Catalog must be used for all relevant components of the pipeline.
+Everything must be developed for serverless compute and workloads unless we find that serverless is incompatible with certain processes.
+All artifacts will be used to create a Databricks Asset Bundle and must be developed with that deployment paradigm in mind.
+The Front-end GUI must include the option for user feedback and store the results of the user testing.
+The deployed example must be easy to follow and adapt for business use cases.
+
+## Future State
+
+Once the initial bundle is made available to all users, we can continue to flesh out the bundle with more advanced use cases:
+
+Instruction Fine-tuning (Prompt Engineering) examples using Mosaic AI Model Training
+Model Pre-training (Fine-tuning) using Mosaic AI Model Training
+Advanced Chaining
+Synthetic data generation
+Advanced Prompt Engineering examples
+
+## Inspiration
+
+Here are some samples for inspiration, some of which might be a bit out of date. These are meant to serve as directional guidance but not necessarily line-for-line templates for our ultimate solution:
+
+Databricks Gen AI Cookbook
+Databricks Gen AI Product Documentation
+DBDemos Rag Chatbot Example
+MLFlow Tracing for Agents
+MLOps Stacks
+
+
 Using Databricks LLMOps Stacks, AI engineers can quickly get started iterating on ML code for new projects while ops engineers set up CI/CD and ML resources
 management, with an easy transition to production. You can also use LLMOps Stacks as a building block in automation for creating new data science projects with production-grade CI/CD pre-configured. More information can be found at https://docs.databricks.com/en/dev-tools/bundles/LLMOps-stacks.html.
 
