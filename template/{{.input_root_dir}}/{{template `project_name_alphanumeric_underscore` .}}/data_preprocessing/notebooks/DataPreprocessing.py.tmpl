@@ -1,0 +1,154 @@
+# Databricks notebook source
+##################################################################################
+# Data Preprocessing Notebook
+#
+# This notebook shows an example of a Data Preprocessing pipeline using Unity Catalog.
+# It is configured and can be executed as the tasks in the write_feature_table_job workflow defined under
+# ``{{template `project_name_alphanumeric_underscore` .}}/resources/feature-engineering-workflow-resource.yml``
+#
+# Parameters:
+# * uc_catalog (required)                     - Name of the Unity Catalog 
+# * database_name (required)                  - Name of the database inside Unity Catalog 
+# * raw_data_table_name (required)            - Name of the raw data table inside UC database
+# * preprocessed_data_table_name (required)   - Name of the preprocessed data table inside UC database
+# * preprocessing_module (required)           - Data Preprocessing module name 
+# * max_chunk_size (optional)                 - Maximum chunk size
+# * min_chunk_size (optional)                 - Minimum chunk size
+# * chunk_overlap (optional)                  - Chunk overlap between chunks 
+#  
+##################################################################################
+
+# COMMAND ----------
+
+# List of input args needed to run this notebook as a job.
+# Provide them via DB widgets or notebook arguments.
+#
+# A Unity Catalog location containing the input data.
+dbutils.widgets.text(
+    "uc_catalog",
+    "llmops_stacks",
+    label="Name of Unity Catalog",
+)
+# Name of database inside Unity Catalog.
+dbutils.widgets.text(
+    "database_name",
+    "rag_chatbot",
+    label="Name of database inside Unity Catalog",
+)
+# Name of input table inside database of Unity Catalog.
+dbutils.widgets.text(
+    "raw_data_table_name",
+    "raw_documentation",
+    label="Raw data Table Name",
+)
+# Name of output table inside database of Unity Catalog.
+dbutils.widgets.text(
+    "preprocessed_data_table_name",
+    "databricks_documentation",
+    label="Preprocessed data Table Name",
+)
+# Data preprocessing module name.
+dbutils.widgets.text(
+    "preprocessing_module", "", label="Data Preprocessing file."
+)
+# Maximum chunk size.
+dbutils.widgets.text("max_chunk_size", "500", label="Maximum chunk size")
+# Minimum chunk size.
+dbutils.widgets.text("min_chunk_size", "20", label="Minimum chunk size")
+# Chunk overlap.
+dbutils.widgets.text("chunk_overlap", "50", label="Chunk overlap")
+
+# COMMAND ----------
+
+import os
+notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
+%cd $notebook_path
+%cd ../preprocessing
+
+# COMMAND ----------
+
+# DBTITLE 1,Define input and output variables
+uc_catalog = dbutils.widgets.get("uc_catalog")
+database_name = dbutils.widgets.get("database_name")
+raw_data_table_name = dbutils.widgets.get("raw_data_table_name")
+preprocessed_data_table_name = dbutils.widgets.get("preprocessed_data_table_name")
+preprocessing_module = dbutils.widgets.get("preprocessing_module")
+
+assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
+assert database_name != "", "database_name notebook parameter must be specified"
+assert raw_data_table_name != "", "raw_data_table_name notebook parameter must be specified"
+assert preprocessed_data_table_name != "", "preprocessed_data_table_name notebook parameter must be specified"
+assert preprocessing_module != "", "preprocessing_module notebook parameter must be specified"
+
+max_chunk_size = int(dbutils.widgets.get("max_chunk_size"))
+min_chunk_size = int(dbutils.widgets.get("min_chunk_size"))
+chunk_overlap = int(dbutils.widgets.get("chunk_overlap"))
+
+# COMMAND ----------
+
+# DBTITLE 1, Use the catalog and database specified in the notebook parameters
+spark.sql(f"""USE `{uc_catalog}`.`{database_name}`""")   
+
+# COMMAND ----------
+
+# DBTITLE 1, Create output preprocessed data table
+if not spark.catalog.tableExists(f"{preprocessed_data_table_name}") or spark.table(f"{preprocessed_data_table_name}").isEmpty():
+  spark.sql(f"""
+  CREATE TABLE IF NOT EXISTS {preprocessed_data_table_name} (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    url STRING,
+    content STRING
+  )
+  TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true')
+  """)
+
+
+# COMMAND ----------
+
+# DBTITLE 1,Create a user-defined function (UDF) to chunk all our documents with spark.
+import pandas as pd
+from functools import partial
+from importlib import import_module
+from pyspark.sql.functions import pandas_udf
+
+mod = import_module(preprocessing_module)
+split_html_on_h2_fn = getattr(mod, "split_html_on_h2")
+
+@pandas_udf("array<string>")
+def parse_and_split(
+    docs: pd.Series,
+    chunk_overlap: int = 50,
+    min_chunk_size: int = 20,
+    max_chunk_size: int = 500,
+) -> pd.Series:
+    """Parse and split html content into chunks.
+
+    :param docs: Input documents
+    :param chunk_overlap: Target overlap between chunks.
+    Overlapping chunks helps to mitigate loss of information when context is divided between chunks.
+    Defaults to 50
+    :param min_chunk_size: The minimum size of a chunk, defaults to 20
+    :param max_chunk_size: The maximum size of a chunk, defaults to 500
+    :return: List of chunked text for each input document
+    """
+    return docs.apply(
+        partial(
+            split_html_on_h2_fn,
+            chunk_overlap=chunk_overlap,
+            min_chunk_size=min_chunk_size,
+            max_chunk_size=max_chunk_size,
+        )
+    )
+
+# COMMAND ----------
+
+# DBTITLE 1,Perform data preprocessing.
+(spark.table(raw_data_table_name)
+      .filter('text is not null')
+      .withColumn('content', F.explode(parse_and_split('text')))
+      .drop("text")
+      .write.mode('overwrite').saveAsTable(preprocessed_data_table_name))
+
+# COMMAND ----------
+
+dbutils.notebook.exit(0)
