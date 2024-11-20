@@ -1,0 +1,45 @@
+new_cluster: &new_cluster
+  new_cluster:
+    num_workers: 3
+    spark_version: 15.3.x-cpu-ml-scala2.12
+    node_type_id: {{template `cloud_specific_node_type_id` .}}
+    data_security_mode: "SINGLE_USER"
+    custom_tags:
+      clusterSource: llmops-stacks_{{template `stacks_version` .}}
+
+common_permissions: &permissions
+  permissions:
+    - level: CAN_VIEW
+      group_name: users
+
+resources:
+  jobs:
+    data_ingestion_job:
+      name: ${bundle.target}-{{ .input_project_name }}-data_ingestion_job
+      job_clusters:
+        - job_cluster_key: data_ingestion_job_cluster
+          <<: *new_cluster
+      tasks:
+        - task_key: PreprocessRawData
+          job_cluster_key: data_ingestion_job_cluster
+          notebook_task:
+            notebook_path: ../data_ingestion/notebooks/data_ingestion.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stack
+              database_name: rag_chatbot
+              raw_data_table_name: raw_documentation
+              data_source_url: https://docs.databricks.com/en/doc-sitemap.xml
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+      schedule:
+        quartz_cron_expression: "0 0 7 * * ?" # daily at 7am
+        timezone_id: UTC
+      <<: *permissions
+      # If you want to turn on notifications for this job, please uncomment the below code,
+      # and provide a list of emails to the on_failure argument.
+      #
+      #  email_notifications:
+      #    on_failure:
+      #      - first@company.com
+      #      - second@company.com
