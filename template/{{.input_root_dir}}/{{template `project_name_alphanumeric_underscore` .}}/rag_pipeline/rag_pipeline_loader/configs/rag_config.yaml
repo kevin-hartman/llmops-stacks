@@ -1,0 +1,46 @@
+rag_chain_configs:
+  embedding_models:
+    - flavor: langchain
+      module: langchain_databricks.DatabricksEmbeddings
+      model_name: databricks-bge-large-en
+      alias: "query_embedding_model"
+      query_params: {}
+      document_params: {}
+    - flavor: langchain
+      module: langchain_databricks.DatabricksEmbeddings
+      model_name: databricks-gte-large-en
+      alias: "text_embedding_model"
+      query_params: {}
+      document_params: {}
+  llms:
+    - flavor: langchain
+      module: langchain_databricks.ChatDatabricks
+      model_name: databricks-dbrx-instruct
+      alias: "context_llm_model"
+      extra_params:
+        max_tokens: 1500
+        temperature: 0.01
+    - flavor: langchain
+      module: langchain_databricks.ChatDatabricks
+      model_name: databricks-meta-llama-3-1-70b-instruct
+      alias: "query_llm_model"
+      extra_params:
+        max_tokens: 1500
+        temperature: 0.01
+  vector_stores:
+    - flavor: langchain
+      alias: "db_vector_store"
+      module: langchain_databricks.DatabricksVectorSearch
+      index_name: "llmops_stacks.rag_chatbot.databricks_pdf_documentation_self_managed_vs_index"
+      endpoint_name: pass
+      dependent_embedding_module_alias: "query_embedding_model"
+      text_column: "test_column"
+      columns:
+        - "c_1"
+        - "c_2"
+        - "c_3"
+  llm_template_configs:
+    base_prompt_template: "Test template {question}"
+    base_context_template: "Test context template {context}"
+
+
