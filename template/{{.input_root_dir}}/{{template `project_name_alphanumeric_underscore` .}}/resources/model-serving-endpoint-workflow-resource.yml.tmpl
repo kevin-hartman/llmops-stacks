@@ -1,0 +1,39 @@
+new_cluster: &new_cluster
+  new_cluster:
+    num_workers: 3
+    spark_version: 15.3.x-cpu-ml-scala2.12
+    node_type_id: {{template `cloud_specific_node_type_id` .}}
+    custom_tags:
+      clusterSource: mlops-stacks_{{template `stacks_version` .}}
+
+common_permissions: &permissions
+  permissions:
+    - level: CAN_VIEW
+      group_name: users
+
+resources:
+  jobs:
+    model_serving_endpoint:
+      name: ${bundle.target}-{{ .input_project_name }}-model-serving-endpoint
+      tasks:
+        - task_key: model_serving_endpoint
+          <<: *new_cluster
+          notebook_task:
+            notebook_path: ../model_serving/notebooks/CreateModelServingEndpoint.py.tmpl
+            base_parameters:
+              env: ${bundle.target}
+              endpoint_name: databricks-dbrx-instruct
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+      schedule:
+        quartz_cron_expression: "0 0 11 * * ?" # daily at 11am
+        timezone_id: UTC
+      <<: *permissions
+      # If you want to turn on notifications for this job, please uncomment the below code,
+      # and provide a list of emails to the on_failure argument.
+      #
+      #  email_notifications:
+      #    on_failure:
+      #      - first@company.com
+      #      - second@company.com
