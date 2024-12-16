@@ -71,7 +71,7 @@ import os
 
 notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
 %cd $notebook_path
-%cd ../data_ingestion
+%cd ../ingestion
 
 # COMMAND ----------
 
@@ -79,7 +79,6 @@ notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.ge
 uc_catalog = dbutils.widgets.get("uc_catalog")
 database_name = dbutils.widgets.get("database_name")
 raw_data_table_name = dbutils.widgets.get("raw_data_table_name")
-eval_set_table_name = dbutils.widgets.get("eval_set_table_name")
 data_source_url = dbutils.widgets.get("data_source_url")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
@@ -99,6 +98,6 @@ from fetch_data import fetch_data_from_url
 
 if not spark.catalog.tableExists(f"{raw_data_table_name}") or spark.table(f"{raw_data_table_name}").isEmpty():
     # Download the data to a DataFrame 
-    doc_articles = fetch_data_from_url(data_source_url)
+    doc_articles = fetch_data_from_url(spark, data_source_url)
     #Save them as to unity catalog
     doc_articles.write.mode('overwrite').saveAsTable(f"{raw_data_table_name}")

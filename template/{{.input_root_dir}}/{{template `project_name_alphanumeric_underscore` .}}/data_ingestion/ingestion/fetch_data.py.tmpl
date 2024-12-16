@@ -24,7 +24,7 @@ retries = Retry(
 )
 
 
-def fetch_data_from_url(data_source_url, max_documents=None):
+def fetch_data_from_url(spark, data_source_url, max_documents=None):
     # Fetch the XML content from sitemap
     response = requests.get(data_source_url)
     root = ET.fromstring(response.content)
