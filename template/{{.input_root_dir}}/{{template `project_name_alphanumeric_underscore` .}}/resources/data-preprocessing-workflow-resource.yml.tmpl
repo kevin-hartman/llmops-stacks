@@ -1,12 +1,3 @@
-new_cluster: &new_cluster
-  new_cluster:
-    num_workers: 3
-    spark_version: 15.3.x-cpu-ml-scala2.12
-    node_type_id: {{template `cloud_specific_node_type_id` .}}
-    data_security_mode: "SINGLE_USER"
-    custom_tags:
-      clusterSource: llmops-stacks_{{template `stacks_version` .}}
-
 common_permissions: &permissions
   permissions:
     - level: CAN_VIEW
@@ -16,12 +7,8 @@ resources:
   jobs:
     data_preprocessing_job:
       name: ${bundle.target}-{{ .input_project_name }}-data-preprocessing-job
-      job_clusters:
-        - job_cluster_key: data_preprocessing_job_cluster
-          <<: *new_cluster
       tasks:
         - task_key: PreprocessRawData
-          job_cluster_key: data_preprocessing_job_cluster
           notebook_task:
             notebook_path: ../data_preprocessing/notebooks/DataPreprocessing.py
             base_parameters:
@@ -30,7 +17,6 @@ resources:
               database_name: rag_chatbot
               raw_data_table_name: raw_documentation
               preprocessed_data_table_name: databricks_documentation
-              preprocessing_module: chunk
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
       schedule:
