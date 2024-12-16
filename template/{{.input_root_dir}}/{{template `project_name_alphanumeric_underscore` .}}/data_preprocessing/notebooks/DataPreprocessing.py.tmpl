@@ -3,22 +3,26 @@
 # Data Preprocessing Notebook
 #
 # This notebook shows an example of a Data Preprocessing pipeline using Unity Catalog.
-# It is configured and can be executed as the tasks in the write_feature_table_job workflow defined under
-# ``{{template `project_name_alphanumeric_underscore` .}}/resources/feature-engineering-workflow-resource.yml``
+# It is configured and can be executed as the tasks in the PreprocessRawData workflow defined under
+# ``{{template `project_name_alphanumeric_underscore` .}}/resources/data-preprocessing-workflow-resource.yml``
 #
 # Parameters:
 # * uc_catalog (required)                     - Name of the Unity Catalog 
 # * database_name (required)                  - Name of the database inside Unity Catalog 
 # * raw_data_table_name (required)            - Name of the raw data table inside UC database
 # * preprocessed_data_table_name (required)   - Name of the preprocessed data table inside UC database
-# * preprocessing_module (required)           - Data Preprocessing module name 
 # * max_chunk_size (optional)                 - Maximum chunk size
 # * min_chunk_size (optional)                 - Minimum chunk size
 # * chunk_overlap (optional)                  - Chunk overlap between chunks 
 #  
 ##################################################################################
 
+
+%pip install --quiet transformers==4.30.2 langchain==0.2.1
+dbutils.library.restartPython()
+
 # COMMAND ----------
+
 
 # List of input args needed to run this notebook as a job.
 # Provide them via DB widgets or notebook arguments.
@@ -47,10 +51,6 @@ dbutils.widgets.text(
     "databricks_documentation",
     label="Preprocessed data Table Name",
 )
-# Data preprocessing module name.
-dbutils.widgets.text(
-    "preprocessing_module", "", label="Data Preprocessing file."
-)
 # Maximum chunk size.
 dbutils.widgets.text("max_chunk_size", "500", label="Maximum chunk size")
 # Minimum chunk size.
@@ -72,13 +72,11 @@ uc_catalog = dbutils.widgets.get("uc_catalog")
 database_name = dbutils.widgets.get("database_name")
 raw_data_table_name = dbutils.widgets.get("raw_data_table_name")
 preprocessed_data_table_name = dbutils.widgets.get("preprocessed_data_table_name")
-preprocessing_module = dbutils.widgets.get("preprocessing_module")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert database_name != "", "database_name notebook parameter must be specified"
 assert raw_data_table_name != "", "raw_data_table_name notebook parameter must be specified"
 assert preprocessed_data_table_name != "", "preprocessed_data_table_name notebook parameter must be specified"
-assert preprocessing_module != "", "preprocessing_module notebook parameter must be specified"
 
 max_chunk_size = int(dbutils.widgets.get("max_chunk_size"))
 min_chunk_size = int(dbutils.widgets.get("min_chunk_size"))
@@ -110,37 +108,25 @@ import pandas as pd
 from functools import partial
 from importlib import import_module
 from pyspark.sql.functions import pandas_udf
+from create_chunk import split_html_on_h2
 
-mod = import_module(preprocessing_module)
-split_html_on_h2_fn = getattr(mod, "split_html_on_h2")
 
 @pandas_udf("array<string>")
 def parse_and_split(
-    docs: pd.Series,
-    chunk_overlap: int = 50,
-    min_chunk_size: int = 20,
-    max_chunk_size: int = 500,
+    docs: pd.Series
 ) -> pd.Series:
     """Parse and split html content into chunks.
 
     :param docs: Input documents
-    :param chunk_overlap: Target overlap between chunks.
-    Overlapping chunks helps to mitigate loss of information when context is divided between chunks.
-    Defaults to 50
-    :param min_chunk_size: The minimum size of a chunk, defaults to 20
-    :param max_chunk_size: The maximum size of a chunk, defaults to 500
     :return: List of chunked text for each input document
     """
-    return docs.apply(
-        partial(
-            split_html_on_h2_fn,
-            chunk_overlap=chunk_overlap,
-            min_chunk_size=min_chunk_size,
-            max_chunk_size=max_chunk_size,
-        )
-    )
+    # TODO: Apply partial to pass chunk, max and min sizes
+    return docs.apply(split_html_on_h2)
 
 # COMMAND ----------
+
+from pyspark.sql import functions as F
+
 
 # DBTITLE 1,Perform data preprocessing.
 (spark.table(raw_data_table_name)
