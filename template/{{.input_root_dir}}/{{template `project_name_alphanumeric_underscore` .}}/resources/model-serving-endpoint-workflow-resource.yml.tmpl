@@ -1,11 +1,3 @@
-new_cluster: &new_cluster
-  new_cluster:
-    num_workers: 3
-    spark_version: 15.3.x-cpu-ml-scala2.12
-    node_type_id: {{template `cloud_specific_node_type_id` .}}
-    custom_tags:
-      clusterSource: mlops-stacks_{{template `stacks_version` .}}
-
 common_permissions: &permissions
   permissions:
     - level: CAN_VIEW
@@ -17,9 +9,8 @@ resources:
       name: ${bundle.target}-{{ .input_project_name }}-model-serving-endpoint
       tasks:
         - task_key: model_serving_endpoint
-          <<: *new_cluster
           notebook_task:
-            notebook_path: ../model_serving/notebooks/CreateModelServingEndpoint.py.tmpl
+            notebook_path: ../model_serving/notebooks/CreateModelServingEndpoint.py
             base_parameters:
               env: ${bundle.target}
               endpoint_name: databricks-dbrx-instruct
