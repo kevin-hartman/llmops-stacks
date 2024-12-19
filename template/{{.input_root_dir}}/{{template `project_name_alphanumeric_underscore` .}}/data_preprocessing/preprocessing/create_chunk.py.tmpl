@@ -1,5 +1,5 @@
 """
-This sample module contains data preprocessing logic to chunk HTML text. 
+This sample module contains data preprocessing logic to chunk HTML text.
 You should plug in your own data chunking logic in the split_html_on_h2 method below.
 """
 
@@ -7,13 +7,9 @@ from langchain.text_splitter import (
     HTMLHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from transformers import OpenAIGPTTokenizer
-
-# Initialize tokenizer once
-tokenizer = OpenAIGPTTokenizer.from_pretrained("openai-gpt")
 
 
-def get_splitters(max_chunk_size: int, chunk_overlap: int):
+def get_splitters(tokenizer, max_chunk_size: int, chunk_overlap: int):
     """Initialize splitters with the shared tokenizer.
 
     :param max_chunk_size: The maximum size of a chunk.
@@ -29,7 +25,11 @@ def get_splitters(max_chunk_size: int, chunk_overlap: int):
 
 
 def split_html_on_h2(
-    html: str, chunk_overlap: int = 50, min_chunk_size: int = 20, max_chunk_size: int = 500
+    html: str,
+    tokenizer,
+    chunk_overlap: int = 50,
+    min_chunk_size: int = 20,
+    max_chunk_size: int = 500,
 ):
     """Parse and split HTML content into chunks.
 
@@ -50,7 +50,9 @@ def split_html_on_h2(
         return []
 
     # Get splitters
-    text_splitter, html_splitter = get_splitters(max_chunk_size, chunk_overlap)
+    text_splitter, html_splitter = get_splitters(
+        tokenizer, max_chunk_size, chunk_overlap
+    )
 
     h2_chunks = html_splitter.split_text(html)
     chunks = []

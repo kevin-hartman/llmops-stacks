@@ -4,13 +4,14 @@
 #
 # This notebook shows an example of a Data Preprocessing pipeline using Unity Catalog.
 # It is configured and can be executed as the tasks in the PreprocessRawData workflow defined under
-# ``{{template `project_name_alphanumeric_underscore` .}}/resources/data-preprocessing-workflow-resource.yml``
+# ``llmops_stack_test_data_ingestion/resources/data-preprocessing-workflow-resource.yml``
 #
 # Parameters:
 # * uc_catalog (required)                     - Name of the Unity Catalog 
 # * database_name (required)                  - Name of the database inside Unity Catalog 
 # * raw_data_table_name (required)            - Name of the raw data table inside UC database
 # * preprocessed_data_table_name (required)   - Name of the preprocessed data table inside UC database
+# * tokenizer_model_name (optional)           - Name of the HuggingFace tokenizer model
 # * max_chunk_size (optional)                 - Maximum chunk size
 # * min_chunk_size (optional)                 - Minimum chunk size
 # * chunk_overlap (optional)                  - Chunk overlap between chunks 
@@ -18,7 +19,7 @@
 ##################################################################################
 
 
-%pip install --quiet transformers==4.30.2 langchain==0.2.1
+%pip install --quiet transformers==4.41.1 langchain==0.2.1
 dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -51,6 +52,12 @@ dbutils.widgets.text(
     "databricks_documentation",
     label="Preprocessed data Table Name",
 )
+# Name of huggingface tokenizer model
+dbutils.widgets.text(
+    "tokenizer_model_name",
+    "openai-gpt",
+    label="HuggingFace tokenizer model",
+)
 # Maximum chunk size.
 dbutils.widgets.text("max_chunk_size", "500", label="Maximum chunk size")
 # Minimum chunk size.
@@ -78,15 +85,17 @@ assert database_name != "", "database_name notebook parameter must be specified"
 assert raw_data_table_name != "", "raw_data_table_name notebook parameter must be specified"
 assert preprocessed_data_table_name != "", "preprocessed_data_table_name notebook parameter must be specified"
 
+tokenizer_model_name = dbutils.widgets.get("preprocessed_data_table_name")
 max_chunk_size = int(dbutils.widgets.get("max_chunk_size"))
 min_chunk_size = int(dbutils.widgets.get("min_chunk_size"))
 chunk_overlap = int(dbutils.widgets.get("chunk_overlap"))
 
 # COMMAND ----------
-import os
+# Download tokenizer model to UC volume
+from transformers import OpenAIGPTTokenizer
 
-os.environ['TRANSFORMERS_CACHE'] = '/dbfs/FileStore/shared_cache/huggingface'
-os.environ['HF_HOME'] = '/dbfs/FileStore/shared_cache/huggingface'
+# Initialize tokenizer once
+tokenizer = OpenAIGPTTokenizer.from_pretrained(tokenizer_model_name, cache_dir=f'{volume_folder}/hg_cache')
 
 
 # COMMAND ----------
@@ -111,6 +120,7 @@ if not spark.catalog.tableExists(f"{preprocessed_data_table_name}") or spark.tab
 # COMMAND ----------
 
 # DBTITLE 1,Create a user-defined function (UDF) to chunk all our documents with spark.
+from functools import partial
 import pandas as pd
 from pyspark.sql.functions import pandas_udf
 from create_chunk import split_html_on_h2
@@ -126,7 +136,7 @@ def parse_and_split(
     :return: List of chunked text for each input document
     """
     # TODO: Apply partial to pass chunk, max and min sizes
-    return docs.apply(split_html_on_h2)
+    return docs.apply(partial(split_html_on_h2, tokenizer=tokenizer))
 
 # COMMAND ----------
 
