@@ -11,7 +11,7 @@
 # * database_name (required)                  - Name of the database inside Unity Catalog 
 # * raw_data_table_name (required)            - Name of the raw data table inside UC database
 # * preprocessed_data_table_name (required)   - Name of the preprocessed data table inside UC database
-# * tokenizer_model_name (optional)           - Name of the HuggingFace tokenizer model
+# * hf_tokenizer_model_name (optional)        - Name of the HuggingFace tokenizer model name
 # * max_chunk_size (optional)                 - Maximum chunk size
 # * min_chunk_size (optional)                 - Minimum chunk size
 # * chunk_overlap (optional)                  - Chunk overlap between chunks 
@@ -54,9 +54,9 @@ dbutils.widgets.text(
 )
 # Name of huggingface tokenizer model
 dbutils.widgets.text(
-    "tokenizer_model_name",
-    "openai-gpt",
-    label="HuggingFace tokenizer model",
+    "hf_tokenizer_model_name",
+    "openai-community/openai-gpt",
+    label="HuggingFace tokenizer model name",
 )
 # Maximum chunk size.
 dbutils.widgets.text("max_chunk_size", "500", label="Maximum chunk size")
@@ -85,19 +85,19 @@ assert database_name != "", "database_name notebook parameter must be specified"
 assert raw_data_table_name != "", "raw_data_table_name notebook parameter must be specified"
 assert preprocessed_data_table_name != "", "preprocessed_data_table_name notebook parameter must be specified"
 
-tokenizer_model_name = dbutils.widgets.get("preprocessed_data_table_name")
+hf_tokenizer_model_name = dbutils.widgets.get("hf_tokenizer_model_name")
 max_chunk_size = int(dbutils.widgets.get("max_chunk_size"))
 min_chunk_size = int(dbutils.widgets.get("min_chunk_size"))
 chunk_overlap = int(dbutils.widgets.get("chunk_overlap"))
 
 # COMMAND ----------
 # Download tokenizer model to UC volume
-from transformers import OpenAIGPTTokenizer
+from transformers import AutoTokenizer
 
 volume_folder =  f"/Volumes/{uc_catalog}/{database_name}/volume_databricks_documentation"
 
 # Initialize tokenizer once
-tokenizer = OpenAIGPTTokenizer.from_pretrained(tokenizer_model_name, cache_dir=f'{volume_folder}/hg_cache')
+tokenizer = AutoTokenizer.from_pretrained(hf_tokenizer_model_name, cache_dir=f'{volume_folder}/hg_cache')
 
 
 # COMMAND ----------
