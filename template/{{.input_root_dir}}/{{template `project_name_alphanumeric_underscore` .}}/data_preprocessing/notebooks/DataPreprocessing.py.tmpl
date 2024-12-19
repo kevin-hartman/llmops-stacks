@@ -94,6 +94,8 @@ chunk_overlap = int(dbutils.widgets.get("chunk_overlap"))
 # Download tokenizer model to UC volume
 from transformers import OpenAIGPTTokenizer
 
+volume_folder =  f"/Volumes/{uc_catalog}/{database_name}/volume_databricks_documentation"
+
 # Initialize tokenizer once
 tokenizer = OpenAIGPTTokenizer.from_pretrained(tokenizer_model_name, cache_dir=f'{volume_folder}/hg_cache')
 
