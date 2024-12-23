@@ -6,6 +6,18 @@ variables:
   experiment_name:
     description: Experiment name for the model training.
     default: /Users/${workspace.current_user.userName}/${bundle.target}-{{template `experiment_base_name` .}}
+  uc_catalog: 
+    description: "the name of Unity Catalog to manage the all the project data and artifacts"
+    default: llmops_stacks
+  database_name:
+    description: "the name of database inside the Unity Catalog to store the data and artifacts"
+    default: rag_chatbot
+  raw_data_table_name: 
+      description: "the table/schema name to store the raw document after ingestion"
+      default: raw_documentation
+  preprocessed_data_table_name: 
+      description: "the table/schema name to store the document after data processing"
+      default: databricks_documentation
   model_name:
     description: Model name for the model training.
     {{ if (eq .input_include_models_in_unity_catalog `no`) }}default: ${bundle.target}-{{template `model_name` .}}
@@ -15,6 +27,7 @@ include:
   # Resources folder contains ML artifact resources for the ML project that defines model and experiment
   # And workflows resources for the ML project including model training -> validation -> deployment,
   # {{- if (eq .input_include_feature_store `yes`) }} feature engineering, {{ end }} batch inference, quality monitoring, metric refresh, alerts and triggering retraining
+  - ./resources/data-preprocessing-workflow-resource.yml
   - ./resources/batch-inference-workflow-resource.yml
   - ./resources/ml-artifacts-resource.yml
   - ./resources/model-workflow-resource.yml
