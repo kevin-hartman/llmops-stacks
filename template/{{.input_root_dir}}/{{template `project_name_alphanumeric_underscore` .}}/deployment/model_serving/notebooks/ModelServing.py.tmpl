@@ -54,8 +54,14 @@ notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.ge
 
 model_uri = dbutils.jobs.taskValues.get("ModelDeployment", "model_uri", debugValue="")
 assert model_uri != "", "model_uri notebook parameter must be specified"
+
+# COMMAND ----------
+
 scale_to_zero = bool(dbutils.widgets.get("scale_to_zero"))
 workload_size = dbutils.widgets.get("workload_size")
+
+# COMMAND ----------
+
 from databricks.sdk.service.serving import ServedModelInputWorkloadSize
 ws_dict = {
     'Small' : ServedModelInputWorkloadSize.SMALL, 
@@ -89,7 +95,13 @@ from databricks import agents
 
 _, model_name, model_version = model_uri.split("/")
 
+# Important when logging chain 
+# mlflow.models.set_retriever_schema is required to:
+# 1. Enable the RAG Studio Review App to properly display retrieved chunks
+# 2. Enable evaluation suite to measure the retriever
+
 # Deploy to enable the Review APP and create an API endpoint
+# Note it deploys model on endpoint and enables inference table
 deployment_info = agents.deploy(model_name=model_name, model_version=model_version, scale_to_zero=scale_to_zero, workload_size=workload_size)
 
 # Add the user-facing instructions to the Review App
@@ -111,7 +123,23 @@ print(f"Share this URL with your stakeholders: {deployment_info.review_app_url}"
 
 # COMMAND ----------
 
-for deployment in agents.list_deployments():
-  if deployment.model_name == model_name:
-    print(f"Review App URL: {deployment.review_app_url}")    
+#for deployment in agents.list_deployments():
+#  if deployment.model_name == model_name:
+#    print(f"Review App URL: {deployment.review_app_url}")   
 
+# COMMAND ---------- 
+
+#To query the endpoint we can do
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+
+w = WorkspaceClient()
+messages = []
+messages.append(ChatMessage(content="What is a large language model?", role=ChatMessageRole.USER))
+response = w.serving_endpoints.query(
+    name=deployment_info.endpoint_name,
+    messages=messages,
+    temperature=1.0,
+    stream=False,
+)
+print(response.choices[0].message.content)
