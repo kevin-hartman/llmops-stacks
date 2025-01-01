@@ -4,12 +4,15 @@ from typing import Any, Dict, Optional, List
 
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, PrivateAttr
-import importlib
-from typing import Literal
+from enum import Enum
+from databricks_langchain import ChatDatabricks
+
+from flavor_enums import LanguageModelFlavor
+from plugin_registries import LLMPlugins
+
 
 # TODO - update pydantic variables to fields with descriptions
-class BaseLLMModel(BaseModel, ABC):
-    module: str
+class BaseLLM(BaseModel, ABC):
     model_name: str
     alias: str
 
@@ -19,16 +22,7 @@ class BaseLLMModel(BaseModel, ABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._setup_logger()
-        self._logger.info(f"Initializing embedding model: {self.alias}")
-
-        try:
-            self._pre_setup_steps()
-            self._setup_llm_model()
-            self._post_setup_steps()
-            self._logger.info(f"Successfully initialized embedding model: {self.alias}")
-        except Exception as e:
-            self._logger.error(f"Failed to initialize embedding model {self.alias}: {e}")
-            raise
+        self._logger.info(f"Initializing language model: {self.alias}")
 
     def _setup_logger(self) -> None:
         """
@@ -50,23 +44,12 @@ class BaseLLMModel(BaseModel, ABC):
             # Set default logging level to INFO
             self._logger.setLevel(logging.INFO)
 
-    @abstractmethod
-    def _pre_setup_steps(self) -> None:
-        pass
-
-    @abstractmethod
-    def _post_setup_steps(self) -> None:
-        pass
-
-    @abstractmethod
-    def _setup_llm_model(self) -> None:
-        pass
 
     @property
     def llm_model(self) -> Any:
         if self._llm_model is None:
-            self._logger.error("LLM model has not been initialized correctly")
-            raise RuntimeError("LLM model has not been initialized correctly")
+            self._logger.error("Language model has not been initialized correctly")
+            raise RuntimeError("Language model has not been initialized correctly")
         return self._llm_model
 
     def set_log_level(self, level: int) -> None:
@@ -79,28 +62,50 @@ class BaseLLMModel(BaseModel, ABC):
         self._logger.setLevel(level)
 
 
-class LangChainLLMModel(BaseLLMModel):
+class LangChainLLM(BaseLLM, ABC):
+    _llm_model: BaseChatModel = PrivateAttr(default=None)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        try:
+            self._pre_setup_steps()
+            self._setup_llm_model()
+            self._post_setup_steps()
+            self._logger.info(f"Successfully initialized embedding model: {self.alias}")
+        except Exception as e:
+            self._logger.error(f"Failed to initialize embedding model {self.alias}: {e}")
+            raise
+
+    @abstractmethod
+    def _pre_setup_steps(self) -> None:
+        pass
+
+    @abstractmethod
+    def _post_setup_steps(self) -> None:
+        pass
+
+    @abstractmethod
+    def _setup_llm_model(self) -> None:
+        pass
+
+
+class DatabricksLLM(LangChainLLM, LLMPlugins):
+    model_name: str
     temperature: float = 0.0
     n: int = 1
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
     extra_params: Optional[Dict[str, Any]] = None
     stream_usage: bool = False
-    flavor: Literal["langchain"]
 
-    _llm_model: BaseChatModel = PrivateAttr(default=None)
+    _llm_model: ChatDatabricks = PrivateAttr(default=None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    # TODO - Standardize package loading and move to common module
     def _setup_llm_model(self) -> None:
         try:
-            package_name, module_name = self.module.split(".")
-            package = importlib.import_module(package_name)
-            module = getattr(package, module_name)
-
-            self._llm_model = module(
+            self._llm_model = ChatDatabricks(
                 endpoint=self.model_name,
                 temperature=self.temperature,
                 n=self.n,
@@ -110,13 +115,17 @@ class LangChainLLMModel(BaseLLMModel):
                 stream_usage=self.stream_usage
             )
         except (ImportError, AttributeError) as e:
-            self._logger.error(f"Failed to initialize llm model: '{e}'")
-            raise RuntimeError(f"Failed to initialize llm model: '{e}'")
+            self._logger.error(f"Failed to initialize language model: '{e}'")
+            raise RuntimeError(f"Failed to initialize language model: '{e}'")
 
     def _pre_setup_steps(self) -> None:
-        self._logger.warning(f"No pre-setup steps defined for llm model '{self.alias}'")
+        self._logger.warning(f"No pre-setup steps defined for language model '{self.alias}'")
         pass
 
     def _post_setup_steps(self) -> None:
-        self._logger.warning(f"No post-setup steps defined for llm model '{self.alias}'")
+        self._logger.warning(f"No post-setup steps defined for language model '{self.alias}'")
         pass
+
+    @staticmethod
+    def llm_flavor() -> str:
+        return LanguageModelFlavor.LANGCHAIN_CHAT_DATABRICKS.value
