@@ -3,11 +3,12 @@ from abc import ABC
 from typing import Any
 from pydantic import BaseModel, PrivateAttr
 
-from rag_pipeline.rag_pipeline_setup.rag_embedding_model.embedding_model_plugins import EmbeddingModelPlugins
+from rag_pipeline_setup.rag_embedding_model.embedding_model_plugins import EmbeddingModelPlugins
 
-# TODO - update pydantic variables to fields with descriptions
 class AbstractBaseEmbeddingModel(EmbeddingModelPlugins, BaseModel, ABC):
+    """The model name reference."""
     model_name: str
+    """Internal name used for referencing."""
     alias: str
 
     _logger: logging.Logger = PrivateAttr()

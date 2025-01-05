@@ -8,3 +8,6 @@ class EmbeddingModelFlavor(Enum):
 
 class LanguageModelFlavor(Enum):
     LANGCHAIN_CHAT_DATABRICKS = "langchain_chat_databricks"
+
+class PipelineFlavor(Enum):
+    LANGCHAIN = "langchain"

@@ -1,0 +1,11 @@
+PIPELINE_CONFIGS = "pipeline_configs"
+EMBEDDING_MODELS = "embedding_models"
+LLMS = "llms"
+VECTOR_STORES = "vector_stores"
+FLAVOR = 'flavor'
+DEPENDENT_MODEL_ALIAS = "dependent_embedding_module_alias"
+PROMPT_TEMPLATES = "prompt_templates"
+ALIAS = "alias"
+EMBEDDING_MODEL_REF = "embedding_model_ref"
+DEFAULT_DIRECTORY="plugins"
+FILE_SKIP_LIST=["__init__.py"]

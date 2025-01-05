@@ -5,9 +5,8 @@ from typing import Any, Dict
 from langchain_core.embeddings import Embeddings
 from databricks_langchain import DatabricksEmbeddings
 
-from rag_pipeline.rag_pipeline_setup.flavor_enums import EmbeddingModelFlavor
-from rag_pipeline.rag_pipeline_setup.rag_embedding_model.base_embedding_model import AbstractBaseEmbeddingModel
-
+from rag_pipeline_setup.flavor_enums import EmbeddingModelFlavor
+from rag_pipeline_setup.rag_embedding_model.base_embedding_model import AbstractBaseEmbeddingModel
 
 class AbstractLangchainEmbeddingModel(AbstractBaseEmbeddingModel, ABC):
     _embedding_model: Embeddings = PrivateAttr()
@@ -51,15 +50,15 @@ class DatabricksEmbeddingModel(AbstractLangchainEmbeddingModel):
                 query_params=self.query_params,
                 documents_params=self.documents_params
             )
-        except RuntimeError as e:
+        except Exception as e:
             self._logger.error(f"Failed to initialize embedding model: '{e}'")
             raise RuntimeError(f"Failed to initialize embedding model: '{e}'")
 
     def _pre_setup_steps(self) -> None:
-        self._logger.warning(f"No pre-setup steps defined for embedding model '{self.alias}'")
+        self._logger.warning(f"No pre-setup steps defined for embedding model: '{self.alias}'")
 
     def _post_setup_steps(self) -> None:
-        self._logger.warning(f"No post-setup steps defined for embedding model '{self.alias}'")
+        self._logger.warning(f"No post-setup steps defined for embedding model: '{self.alias}'")
 
     @staticmethod
     def embedding_model_flavor() -> str:

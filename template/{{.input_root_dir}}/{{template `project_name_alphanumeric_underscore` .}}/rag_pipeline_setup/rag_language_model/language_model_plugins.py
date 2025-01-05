@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 from importlib import util
 
-DEFAULT_DIRECTORY="plugins"
-FILE_SKIP_LIST=["__init__.py"]
+from rag_pipeline_setup.consts import FILE_SKIP_LIST, DEFAULT_DIRECTORY
 
 class LanguageModelPlugins(ABC):
     language_model_plugins = {}
@@ -70,8 +69,8 @@ class LanguageModelPluginsDiscovery():
         return files
 
     def load_plugins(self, plugin_file_list: list[str]) -> None:
-        try:
-            for file in plugin_file_list:
+        for file in plugin_file_list:
+            try:
                 self._logger.info(f"Attempting to load Language model plugin from file: '{file}'")
                 if not exists(file):
                     self._logger.error(f"File for plugin at location '{file}' not found")
@@ -81,9 +80,9 @@ class LanguageModelPluginsDiscovery():
                 module = util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 self._logger.info(f"Successfully loaded Language Model plugin from file: '{file}'")
-        except Exception as ex:
-            self._logger.error(f"Error loading Language model plugin module: '{file}'. Please check trace log")
-            raise
+            except Exception:
+                self._logger.error(f"Error loading Language model plugin module: '{file}'. Please check trace log")
+                raise
 
     def discover_language_model_plugins(self, plugins_dir: str = DEFAULT_DIRECTORY,
                                          abs_path: bool = False) -> None:
@@ -91,4 +90,3 @@ class LanguageModelPluginsDiscovery():
         self._logger.info(f"Finding Language model plugins from directory: '{plugins_directory_path}'")
         valid_plugin_files = self.list_files_in_plugin_dir(plugins_directory_path)
         self.load_plugins(valid_plugin_files)
-

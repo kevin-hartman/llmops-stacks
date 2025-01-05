@@ -3,10 +3,12 @@ from abc import ABC
 from typing import Any
 from pydantic import BaseModel, PrivateAttr
 
-from rag_pipeline.rag_pipeline_setup.rag_language_model.language_model_plugins import LanguageModelPlugins
+from rag_pipeline_setup.rag_language_model.language_model_plugins import LanguageModelPlugins
 
 class AbstractBaseLLM(LanguageModelPlugins, BaseModel, ABC):
+    """The model name reference."""
     model_name: str
+    """Internal name used for referencing."""
     alias: str
 
     _logger: logging.Logger = PrivateAttr()

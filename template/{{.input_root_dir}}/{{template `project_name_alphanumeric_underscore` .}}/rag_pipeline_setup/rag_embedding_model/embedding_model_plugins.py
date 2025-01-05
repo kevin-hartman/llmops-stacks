@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 from importlib import util
 
-DEFAULT_DIRECTORY="plugins"
-FILE_SKIP_LIST=["__init__.py"]
+from rag_pipeline_setup.consts import FILE_SKIP_LIST, DEFAULT_DIRECTORY
 
 class EmbeddingModelPlugins(ABC):
     embedding_model_plugins = {}
@@ -21,7 +20,7 @@ class EmbeddingModelPlugins(ABC):
     def embedding_model_flavor() -> str:
         pass
 
-# TODO - Move to common implementation
+
 class EmbeddingModelPluginsDiscovery():
     def __init__(self):
         self._setup_logger()
@@ -69,10 +68,9 @@ class EmbeddingModelPluginsDiscovery():
 
         return files
 
-    # TODO - Correct module name after import to prevent pydantic render errors
     def load_plugins(self, plugin_file_list: list[str]) -> None:
-        try:
-            for file in plugin_file_list:
+        for file in plugin_file_list:
+            try:
                 self._logger.info(f"Attempting to load Embedding model plugin from file: '{file}'")
                 if not exists(file):
                     self._logger.error(f"File for plugin at location '{file}' not found")
@@ -82,9 +80,9 @@ class EmbeddingModelPluginsDiscovery():
                 module = util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 self._logger.info(f"Successfully loaded Embedding Model plugin from file: '{file}'")
-        except Exception as ex:
-            self._logger.error(f"Error loading Embedding model plugin module: '{file}'. Please check trace log")
-            raise
+            except Exception:
+                self._logger.error(f"Error loading Embedding model plugin module: '{file}'. Please check trace log")
+                raise
 
     def discover_embedding_model_plugins(self, plugins_dir: str = DEFAULT_DIRECTORY,
                                          abs_path: bool = False) -> None:

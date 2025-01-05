@@ -3,11 +3,11 @@ from abc import ABC
 from typing import Any
 from pydantic import BaseModel, PrivateAttr
 
-from rag_pipeline.rag_pipeline_setup.rag_vector_store.vector_store_plugins import VectorStorePlugins
+from rag_pipeline_setup.rag_vector_store.vector_store_plugins import VectorStorePlugins
 
 
-# TODO - update pydantic variables to fields with descriptions
 class AbstractBaseVectorStore(VectorStorePlugins, BaseModel, ABC):
+    """Internal name used for referencing."""
     alias: str
 
     _logger: logging.Logger = PrivateAttr()

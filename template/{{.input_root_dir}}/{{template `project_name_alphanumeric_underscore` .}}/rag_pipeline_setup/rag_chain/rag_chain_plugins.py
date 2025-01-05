@@ -6,23 +6,22 @@ from importlib import util
 
 from rag_pipeline_setup.consts import FILE_SKIP_LIST, DEFAULT_DIRECTORY
 
-class VectorStorePlugins(ABC):
-    vector_store_plugins = {}
+class RagChainPlugins(ABC):
+    rag_chain_plugins = {}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if "Abstract" not in cls.__name__:
-            print(f"Registering Vector Store plugin '{cls.__name__}' with flavor '{cls.vector_store_flavor()}'")
-            cls.vector_store_plugins[cls.vector_store_flavor()] = cls
+            print(f"Registering RAG Chain plugin '{cls.__name__}' with flavor '{cls.rag_chain_flavor()}'")
+            cls.rag_chain_plugins[cls.rag_chain_flavor()] = cls
 
     @staticmethod
     @abstractmethod
-    def vector_store_flavor() -> str:
+    def rag_chain_flavor() -> str:
         pass
 
 
-# TODO - Move to common implementation
-class VectorStorePluginsDiscovery():
+class RAGChainPluginsDiscovery():
     def __init__(self):
         self._setup_logger()
 
@@ -62,17 +61,18 @@ class VectorStorePluginsDiscovery():
                  and file.endswith(".py")]
 
         files = [join(plugins_directory_path, file) for file in files]
-        self._logger.info(f"List of Vector Store plugins found: '{files}'")
+        self._logger.info(f"List of RAG Chain plugins found: '{files}'")
         if len(files) == 0:
-            self._logger.error(f"No Vector Store plugins found in directory: '{plugins_directory_path}'")
+            self._logger.error(f"No RAG Chain plugins found in directory: '{plugins_directory_path}'")
             raise RuntimeError(f"Empty plugin directory: '{plugins_directory_path}'")
 
         return files
 
+    # TODO - Correct module name after import to prevent pydantic render errors
     def load_plugins(self, plugin_file_list: list[str]) -> None:
         for file in plugin_file_list:
             try:
-                self._logger.info(f"Attempting to load Vector Store plugin from file: '{file}'")
+                self._logger.info(f"Attempting to load RAG Chain plugin from file: '{file}'")
                 if not exists(file):
                     self._logger.error(f"File for plugin at location '{file}' not found")
                     raise FileNotFoundError(f"Missing file at location: '{file}'")
@@ -80,14 +80,14 @@ class VectorStorePluginsDiscovery():
                 spec = util.spec_from_file_location(module_name, file)
                 module = util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                self._logger.info(f"Successfully loaded Vector Store plugin from file: '{file}'")
+                self._logger.info(f"Successfully loaded RAG Chain plugin from file: '{file}'")
             except Exception:
-                self._logger.error(f"Error loading Vector Store plugin module: '{file}'. Please check trace log")
+                self._logger.error(f"Error loading RAG Chain plugin module: '{file}'. Please check trace log")
                 raise
 
-    def discover_vector_store_plugins(self, plugins_dir: str = DEFAULT_DIRECTORY,
+    def discover_rag_chain_plugins(self, plugins_dir: str = DEFAULT_DIRECTORY,
                                          abs_path: bool = False) -> None:
         plugins_directory_path = self.construct_path(plugins_dir, abs_path)
-        self._logger.info(f"Finding Vector Store plugins from directory: '{plugins_directory_path}'")
+        self._logger.info(f"Finding RAG Chain plugins from directory: '{plugins_directory_path}'")
         valid_plugin_files = self.list_files_in_plugin_dir(plugins_directory_path)
         self.load_plugins(valid_plugin_files)

@@ -5,8 +5,8 @@ from pydantic import PrivateAttr
 from langchain_core.language_models import BaseChatModel
 from databricks_langchain import ChatDatabricks
 
-from rag_pipeline.rag_pipeline_setup.flavor_enums import LanguageModelFlavor
-from rag_pipeline.rag_pipeline_setup.rag_language_model.base_language_model import AbstractBaseLLM
+from rag_pipeline_setup.flavor_enums import LanguageModelFlavor
+from rag_pipeline_setup.rag_language_model.base_language_model import AbstractBaseLLM
 
 
 class AbstractLangChainLLM(AbstractBaseLLM, ABC):
@@ -18,9 +18,9 @@ class AbstractLangChainLLM(AbstractBaseLLM, ABC):
             self._pre_setup_steps()
             self._setup_llm_model()
             self._post_setup_steps()
-            self._logger.info(f"Successfully initialized embedding model: {self.alias}")
+            self._logger.info(f"Successfully initialized Language model: '{self.alias}'")
         except Exception as e:
-            self._logger.error(f"Failed to initialize embedding model {self.alias}: {e}")
+            self._logger.error(f"Failed to initialize Language model '{self.alias}': {e}")
             raise
 
     @abstractmethod
@@ -61,7 +61,7 @@ class DatabricksLLM(AbstractLangChainLLM):
                 extra_params=self.extra_params,
                 stream_usage=self.stream_usage
             )
-        except (ImportError, AttributeError) as e:
+        except Exception as e:
             self._logger.error(f"Failed to initialize language model: '{e}'")
             raise RuntimeError(f"Failed to initialize language model: '{e}'")
 

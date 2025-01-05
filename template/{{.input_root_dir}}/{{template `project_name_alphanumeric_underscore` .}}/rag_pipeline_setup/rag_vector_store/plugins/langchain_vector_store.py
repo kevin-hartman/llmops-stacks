@@ -2,12 +2,11 @@ from abc import abstractmethod, ABC
 from pydantic import PrivateAttr, ConfigDict
 from typing import Optional, List, Any
 
-#from rag_pipeline.rag_pipeline_setup.rag_embedding_model.plugins.langchain_embedding_models import DatabricksEmbeddingModel
 from langchain_core.vectorstores import VectorStore
 from databricks_langchain import DatabricksVectorSearch
 
-from rag_pipeline.rag_pipeline_setup.flavor_enums import VectorStoreFlavor
-from rag_pipeline.rag_pipeline_setup.rag_vector_store.base_vector_store import AbstractBaseVectorStore
+from rag_pipeline_setup.flavor_enums import VectorStoreFlavor
+from rag_pipeline_setup.rag_vector_store.base_vector_store import AbstractBaseVectorStore
 
 
 class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
@@ -19,9 +18,9 @@ class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
             self._pre_setup_steps()
             self._setup_vector_store()
             self._post_setup_steps()
-            self._logger.info(f"Successfully initialized embedding model: {self.alias}")
+            self._logger.info(f"Successfully initialized Vector Store: '{self.alias}'")
         except Exception as e:
-            self._logger.error(f"Failed to initialize Vector Store {self.alias}: {e}")
+            self._logger.error(f"Failed to initialize Vector Store '{self.alias}': {e}")
             raise
 
     # TODO - Standardize package loading and move to common module
@@ -39,12 +38,12 @@ class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
 
 
 class DatabricksVectorStore(AbstractLangChainVectorStore):
-    # model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     index_name: str
-    endpoint_name: Optional[str] = None,
-    embedding_model_ref: Optional[Any] = None,
-    text_column: Optional[str] = None,
+    endpoint_name: Optional[str] = None
+    embedding_model_ref: Optional[Any] = None
+    text_column: Optional[str] = None
     columns: Optional[List[str]] = None
 
     _vector_store: DatabricksVectorSearch = PrivateAttr()
@@ -58,11 +57,11 @@ class DatabricksVectorStore(AbstractLangChainVectorStore):
             self._vector_store = DatabricksVectorSearch(
                 index_name=self.index_name,
                 endpoint=self.endpoint_name,
-                embedding=self.embedding_model_ref.embedding_model,
+                embedding=None if self.embedding_model_ref is None else self.embedding_model_ref.embedding_model,
                 text_column=self.text_column,
                 columns=self.columns
             )
-        except (ImportError, AttributeError) as e:
+        except Exception as e:
             self._logger.error(f"Failed to initialize Vector Store: '{e}'")
             raise RuntimeError(f"Failed to initialize Vector Store: '{e}'")
 
