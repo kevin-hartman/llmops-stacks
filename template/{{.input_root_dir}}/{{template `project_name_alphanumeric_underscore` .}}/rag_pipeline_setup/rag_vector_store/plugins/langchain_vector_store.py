@@ -23,7 +23,6 @@ class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
             self._logger.error(f"Failed to initialize Vector Store '{self.alias}': {e}")
             raise
 
-    # TODO - Standardize package loading and move to common module
     @abstractmethod
     def _pre_setup_steps(self) -> None:
         pass

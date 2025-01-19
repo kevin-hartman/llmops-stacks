@@ -41,11 +41,11 @@ class AbstractBaseLLM(LanguageModelPlugins, BaseModel, ABC):
 
 
     @property
-    def llm_model(self) -> Any:
-        if self._llm_model is None:
+    def llm(self) -> Any:
+        if self._llm is None:
             self._logger.error("Language model has not been initialized correctly")
             raise RuntimeError("Language model has not been initialized correctly")
-        return self._llm_model
+        return self._llm
 
     def set_log_level(self, level: int) -> None:
         """

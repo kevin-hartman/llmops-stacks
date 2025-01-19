@@ -16,6 +16,9 @@ rag_chain_configs:
         alias: "text_embedding_model"
         query_params: {}
         document_params: {}
+      - flavor: langchain_ollama
+        model_name: gemma2:2b
+        alias: "ollama_gemma"
     llms:
       - flavor: langchain_chat_databricks
         model_name: databricks-dbrx-instruct
@@ -29,6 +32,10 @@ rag_chain_configs:
         extra_params:
           max_tokens: 1500
           temperature: 0.01
+      - flavor: langchain_chat_ollama
+        model_name: gemma2:2b
+        alias: "ollama_gemma"
+        temperature: 0
     vector_stores:
       - flavor: langchain_databricks_vector_search
         alias: "db_vector_store"

@@ -10,7 +10,7 @@ from rag_pipeline_setup.rag_language_model.base_language_model import AbstractBa
 
 
 class AbstractLangChainLLM(AbstractBaseLLM, ABC):
-    _llm_model: BaseChatModel = PrivateAttr(default=None)
+    _llm: BaseChatModel = PrivateAttr(default=None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -45,14 +45,14 @@ class DatabricksLLM(AbstractLangChainLLM):
     extra_params: Optional[Dict[str, Any]] = None
     stream_usage: bool = False
 
-    _llm_model: ChatDatabricks = PrivateAttr(default=None)
+    _llm: ChatDatabricks = PrivateAttr(default=None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def _setup_llm_model(self) -> None:
         try:
-            self._llm_model = ChatDatabricks(
+            self._llm = ChatDatabricks(
                 endpoint=self.model_name,
                 temperature=self.temperature,
                 n=self.n,

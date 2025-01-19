@@ -88,6 +88,10 @@ class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
             embedding_model_class = (EmbeddingModelPlugins
                                .embedding_model_plugins
                                .get(em_model[FLAVOR]))
+
+            if embedding_model_class is None:
+                raise RuntimeError(f"No Embedding model plugin with flavor: '{em_model[FLAVOR]}'")
+
             embedding_model = embedding_model_class(**em_model)
             self._embedding_models[em_model[ALIAS]] = embedding_model
 
@@ -101,6 +105,10 @@ class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
             ll_model_class = (LanguageModelPlugins
                               .language_model_plugins
                               .get(ll_model[FLAVOR]))
+
+            if ll_model_class is None:
+                raise RuntimeError(f"No Language model plugin with flavor: '{ll_model[FLAVOR]}'")
+
             language_model = ll_model_class(**ll_model)
             self._llms[ll_model[ALIAS]] = language_model
 
@@ -120,6 +128,10 @@ class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
             vc_store_class = (VectorStorePlugins
                          .vector_store_plugins
                          .get(vcs[FLAVOR]))
+
+            if vc_store_class is None:
+                raise RuntimeError(f"No Language model plugin with flavor: '{vcs[FLAVOR]}'")
+
             vc_store = vc_store_class(**vcs)
             self._vector_stores[vcs[ALIAS]] = vc_store
 
@@ -143,11 +155,16 @@ class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
         return self._base_template_dictionary
 
     def get_embedding_model(self, alias: str) -> AbstractBaseEmbeddingModel:
-        return self.embedding_models.get(alias, False)
+        if not self.embedding_models.get(alias, False):
+            raise RuntimeError(f"Embedding model with alias '{alias}' not found")
+        return self.embedding_models[alias]
 
     def get_chat_model(self, alias: str) -> AbstractBaseLLM:
-        return self.llms.get(alias, False)
+        if not self.llms.get(alias, False):
+            raise RuntimeError(f"Language model with alias '{alias}' not found")
+        return self.llms[alias]
 
     def get_vector_store(self, alias: str) -> AbstractBaseVectorStore:
-        return self.vector_stores.get(alias, False)
-
+        if not self.vector_stores.get(alias, False):
+            raise RuntimeError(f"Vector Store with alias '{alias}' not found")
+        return self.vector_stores[alias]
