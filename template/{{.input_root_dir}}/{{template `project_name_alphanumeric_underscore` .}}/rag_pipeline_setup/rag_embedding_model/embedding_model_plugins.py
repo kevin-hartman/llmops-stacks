@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 from importlib import util
 
-from rag_pipeline_setup.consts import FILE_SKIP_LIST, DEFAULT_DIRECTORY
+from rag_pipeline_setup.constants import FILE_SKIP_LIST, DEFAULT_DIRECTORY
 
 class EmbeddingModelPlugins(ABC):
     embedding_model_plugins = {}

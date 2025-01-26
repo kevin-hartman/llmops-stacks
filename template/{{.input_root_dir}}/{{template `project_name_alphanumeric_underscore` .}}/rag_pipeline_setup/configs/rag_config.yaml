@@ -3,47 +3,26 @@ rag_chain_configs:
   alias: "first_rag_pipeline"
   pipeline_configs:
     prompt_templates:
-      base_prompt_template: "Test template {question}"
-      base_context_template: "Test context template {context}"
+      base_prompt_template: "You are a trusted assistant that helps answer questions based only on the provided information. If you do not know the answer to a question, you truthfully say you do not know.  Here is some context which might or might not help you answer: {context}.  Answer directly, do not repeat the question, do not start with something like: the answer to the question, do not add AI in front of your answer, do not say: here is the answer, do not mention the context or the question. Based on this context, answer this question: {question}"
     embedding_models:
       - flavor: langchain_databricks
-        model_name: databricks-bge-large-en
-        alias: "query_embedding_model"
-        query_params: {}
-        document_params: {}
-      - flavor: langchain_databricks
         model_name: databricks-gte-large-en
-        alias: "text_embedding_model"
-        query_params: {}
-        document_params: {}
-      - flavor: langchain_ollama
-        model_name: gemma2:2b
-        alias: "ollama_gemma"
+        alias: "query_embedding_model"
     llms:
       - flavor: langchain_chat_databricks
         model_name: databricks-dbrx-instruct
-        alias: "langchain_chat_databricks"
+        alias: chat_dbrx
         extra_params:
           max_tokens: 1500
           temperature: 0.01
-      - flavor: langchain_chat_databricks
-        model_name: databricks-meta-llama-3-1-70b-instruct
-        alias: "langchain_chat_databricks"
-        extra_params:
-          max_tokens: 1500
-          temperature: 0.01
-      - flavor: langchain_chat_ollama
-        model_name: gemma2:2b
-        alias: "ollama_gemma"
-        temperature: 0
     vector_stores:
       - flavor: langchain_databricks_vector_search
         alias: "db_vector_store"
-        index_name: "llmops_stacks.rag_chatbot.databricks_pdf_documentation_self_managed_vs_index"
-        endpoint_name: pass
-        dependent_embedding_module_alias: "query_embedding_model"
-        text_column: "test_column"
+        index_name: "main.dbdemos_rag_chatbot.databricks_documentation_vs_index"
+        endpoint_name: dbdemos_vs_endpoint
+        client_args:
+          workspace_url: https://dbc-4d4ba769-eb53.cloud.databricks.com
         columns:
-          - "c_1"
-          - "c_2"
-          - "c_3"
+          - "id"
+          - "content"
+          - "url"

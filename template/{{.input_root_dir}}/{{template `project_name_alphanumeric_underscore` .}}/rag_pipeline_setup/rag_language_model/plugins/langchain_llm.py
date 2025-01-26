@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List
 from pydantic import PrivateAttr
+import os
 
 from langchain_core.language_models import BaseChatModel
 from databricks_langchain import ChatDatabricks
 
+from rag_pipeline_setup import constants
 from rag_pipeline_setup.flavor_enums import LanguageModelFlavor
 from rag_pipeline_setup.rag_language_model.base_language_model import AbstractBaseLLM
 
@@ -66,8 +68,13 @@ class DatabricksLLM(AbstractLangChainLLM):
             raise RuntimeError(f"Failed to initialize language model: '{e}'")
 
     def _pre_setup_steps(self) -> None:
-        self._logger.warning(f"No pre-setup steps defined for language model '{self.alias}'")
-        pass
+        self._logger.info(f"Checking Databricks authentication using Service Principal for Language Model: '{self.alias}'")
+        if not os.environ.get(constants.DATABRICKS_CLIENT_ID, False):
+            raise RuntimeError(f"Missing '{constants.DATABRICKS_CLIENT_ID}' in environment variable")
+        if not os.environ.get(constants.DATABRICKS_CLIENT_SECRET, False):
+            raise RuntimeError(f"Missing '{constants.DATABRICKS_CLIENT_SECRET}' in environment variable")
+        if not os.environ.get(constants.DATABRICKS_HOST, False):
+            raise RuntimeError(f"Missing '{constants.DATABRICKS_HOST}' in environment variable")
 
     def _post_setup_steps(self) -> None:
         self._logger.warning(f"No post-setup steps defined for language model '{self.alias}'")

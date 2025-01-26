@@ -19,22 +19,24 @@ print()
 rag_chain = RagChainPlugins.rag_chain_plugins.get(mapping['rag_chain_configs']['flavor'])
 rag_chain_init = rag_chain(**mapping['rag_chain_configs'])
 
-em_model = rag_chain_init.get_embedding_model("ollama_gemma")
+print(rag_chain_init.base_template_dictionary)
 
-text = "Test string"
-
-single_vector = em_model.embedding_model.embed_query(text)
-print(str(single_vector))  # Show the first 100 characters of the vector
-
-lm = rag_chain_init.get_chat_model("ollama_gemma")
-
-messages = [
-    (
-        "system",
-        "You are a helpful assistant that translates English to French. Translate the user sentence.",
-    ),
-    ("human", "I love programming."),
-]
-ai_msg = lm.llm.invoke(messages)
-
-print(ai_msg)
+# em_model = rag_chain_init.get_embedding_model("ollama_gemma")
+#
+# text = "Test string"
+#
+# single_vector = em_model.embedding_model.embed_query(text)
+# print(str(single_vector))  # Show the first 100 characters of the vector
+#
+# lm = rag_chain_init.get_chat_model("ollama_gemma")
+#
+# messages = [
+#     (
+#         "system",
+#         "You are a helpful assistant that translates English to French. Translate the user sentence.",
+#     ),
+#     ("human", "I love programming."),
+# ]
+# ai_msg = lm.llm.invoke(messages)
+#
+# print(ai_msg)

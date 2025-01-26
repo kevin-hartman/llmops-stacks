@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Dict
 from pydantic import BaseModel, PrivateAttr
 
 from rag_pipeline_setup.rag_embedding_model.embedding_model_plugins import EmbeddingModelPlugins
@@ -13,7 +13,7 @@ from rag_pipeline_setup.rag_chain.rag_chain_plugins import RagChainPlugins
 from rag_pipeline_setup.rag_embedding_model.base_embedding_model import  AbstractBaseEmbeddingModel
 from rag_pipeline_setup.rag_language_model.base_language_model import  AbstractBaseLLM
 from rag_pipeline_setup.rag_vector_store.base_vector_store import  AbstractBaseVectorStore
-from rag_pipeline_setup.consts import *
+from rag_pipeline_setup.constants import *
 
 # TODO - update pydantic variables to fields with descriptions
 class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
@@ -38,7 +38,7 @@ class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
         self._setup_embedding_models()
         self._setup_language_models()
         self._setup_vector_stores()
-        # self._setup_template_dictionary()
+        self._setup_template_dictionary()
 
     def _setup_logger(self) -> None:
         """
