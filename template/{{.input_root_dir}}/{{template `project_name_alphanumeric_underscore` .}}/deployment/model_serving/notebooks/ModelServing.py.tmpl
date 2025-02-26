@@ -6,12 +6,8 @@
 #
 # This notebook has the following parameters:
 
-#  * model_uri (required)  - URI of the model to deploy. Must be in the format "models:/<name>/<version-id>", as described in
-#                            https://www.mlflow.org/docs/latest/model-registry.html#fetching-an-mlflow-model-from-the-model-registry
-#                            This parameter is read as a task value
-#                            ({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/databricks-utils.html")) }}),
-#                            rather than as a notebook widget. That is, we assume a preceding task (the Train.py
-#                            notebook) has set a task value with key "model_uri".
+#  * model_name (required)  - Fully Qualified Model Name (FQMN) of the model to deploy in the format <catalog>.<schema>.<model_name>
+#  * model_version (required) - Version of the model to deploy.
 #  * scale_to_zero (required)  - Specify if the endpoint should scale to zero when not in use.
 #  * workload_size (required)  - Specify  the size of the compute scale out that corresponds with the number of requests this served 
 #                                model can process at the same time. This number should be roughly equal to QPS x model run time.
@@ -20,6 +16,16 @@
 # List of input args needed to run the notebook as a job.
 # Provide them via DB widgets or notebook arguments.
 #
+
+# COMMAND ----------
+
+#MAGIC %pip install -U -qqqq databricks-agents
+
+# COMMAND ----------
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # Name of the current environment
 dbutils.widgets.dropdown("scale_to_zero", "True", ["True", "False"], "Scale to zero")
 dbutils.widgets.dropdown("workload_size", "Small", ["Small", "Medium", "Large"], "Workload Size")
@@ -31,17 +37,17 @@ dbutils.widgets.dropdown("workload_size", "Small", ["Small", "Medium", "Large"],
 
 # COMMAND ----------
 
-import os
-notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-%cd $notebook_path
+#import os
+#notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
+#%cd $notebook_path
 
 # COMMAND ----------
 
-# MAGIC %pip install -r ../../requirements.txt
+## MAGIC %pip install -r ../../../requirements.txt
 
 # COMMAND ----------
 
-dbutils.library.restartPython()
+#dbutils.library.restartPython()
 
 # COMMAND ----------
 
@@ -52,8 +58,8 @@ notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.ge
 
 # COMMAND ----------
 
-model_uri = dbutils.jobs.taskValues.get("ModelDeployment", "model_uri", debugValue="")
-assert model_uri != "", "model_uri notebook parameter must be specified"
+model_name = dbutils.jobs.taskValues.get("ModelDeployment", "MODEL_NAME_FQN", debugValue="")
+model_version = dbutils.jobs.taskValues.get("ModelDeployment", "MODEL_VERSION", debugValue="")
 
 # COMMAND ----------
 
@@ -93,7 +99,7 @@ Thank you for your time and effort in testing our assistant. Your contributions 
 
 from databricks import agents
 
-_, model_name, model_version = model_uri.split("/")
+#_, model_name, model_version = model_uri.split("/")
 
 # Important when logging chain 
 # mlflow.models.set_retriever_schema is required to:
@@ -102,13 +108,18 @@ _, model_name, model_version = model_uri.split("/")
 
 # Deploy to enable the Review APP and create an API endpoint
 # Note it deploys model on endpoint and enables inference table
-deployment_info = agents.deploy(model_name=model_name, model_version=model_version, scale_to_zero=scale_to_zero, workload_size=workload_size)
+
+if not agents.get_deployments(model_name):
+    deployment_info = agents.deploy(model_name=model_name, model_version=model_version, scale_to_zero=scale_to_zero, workload_size=workload_size)
+else:
+    deployment_info = agents.get_deployments(model_name)[0]
+    print(f"Deployment {model_name} already exists")
 
 # Add the user-facing instructions to the Review App
 agents.set_review_instructions(model_name, instructions_to_reviewer)
 
 # COMMAND ----------
-
+# to run the following command, you need to have a "Manage" access for the model serving endpoint
 from serving import wait_for_model_serving_endpoint_to_be_ready
 wait_for_model_serving_endpoint_to_be_ready(deployment_info.endpoint_name)
 
