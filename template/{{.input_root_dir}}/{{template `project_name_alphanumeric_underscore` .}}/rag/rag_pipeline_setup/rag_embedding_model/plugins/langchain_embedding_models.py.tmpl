@@ -11,6 +11,14 @@ from rag_pipeline_setup.flavor_enums import EmbeddingModelFlavor
 from rag_pipeline_setup.rag_embedding_model.base_embedding_model import AbstractBaseEmbeddingModel
 
 class AbstractLangchainEmbeddingModel(AbstractBaseEmbeddingModel, ABC):
+    """
+    Abstract base class for Langchain embedding model integrations.
+
+    This class defines a standardized initialization process for embedding models,
+    with abstract methods that concrete subclasses must implement to customize
+    the setup process for specific embedding model providers.
+    """
+
     _embedding_model: Embeddings = PrivateAttr()
 
     def __init__(self, **kwargs):
@@ -37,6 +45,17 @@ class AbstractLangchainEmbeddingModel(AbstractBaseEmbeddingModel, ABC):
         pass
 
 class DatabricksEmbeddingModel(AbstractLangchainEmbeddingModel):
+    """
+    Langchain integration for Databricks embedding models.
+
+    This class provides a wrapper for Databricks' embedding models, handling
+    authentication via service principal credentials and configuring the
+    model with appropriate parameters.
+
+    The class uses the DatabricksEmbeddings implementation from Langchain
+    to interact with the Databricks embedding endpoints.
+    """
+
     query_params: Dict[str, Any] = {}
     documents_params: Dict[str, Any] = {}
 

@@ -7,6 +7,16 @@ from importlib import util
 from rag_pipeline_setup.constants import FILE_SKIP_LIST, DEFAULT_DIRECTORY
 
 class VectorStorePlugins(ABC):
+   """
+   This class implements a plugin architecture using Python's __init_subclass__ hook to automatically
+   register concrete vector store implementations. Each implementation defines its own "flavor"
+   (a unique string identifier) that can be used to look up and instantiate the appropriate class.
+
+   The plugin registry is maintained in the class-level dictionary 'vector_store_plugins', which maps
+   flavor strings to their corresponding implementation classes. This registry enables dynamic discovery
+   and loading of vector store implementations without explicit imports or configuration.
+   """
+
     vector_store_plugins = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -21,8 +31,15 @@ class VectorStorePlugins(ABC):
         pass
 
 
-# TODO - Move to common implementation
 class VectorStorePluginsDiscovery():
+    """
+    Discovers and loads vector store plugin modules dynamically from the filesystem.
+
+    This class handles the dynamic discovery and loading of vector store implementations
+    by searching for Python files in a specified directory, loading them as modules, and
+    allowing their VectorStorePlugins subclasses to self-register through the plugin mechanism.
+    """
+
     def __init__(self):
         self._setup_logger()
 

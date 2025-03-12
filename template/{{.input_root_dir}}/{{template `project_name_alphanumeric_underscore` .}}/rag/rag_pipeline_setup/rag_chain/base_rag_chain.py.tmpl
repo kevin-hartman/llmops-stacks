@@ -15,8 +15,9 @@ from rag_pipeline_setup.rag_language_model.base_language_model import  AbstractB
 from rag_pipeline_setup.rag_vector_store.base_vector_store import  AbstractBaseVectorStore
 from rag_pipeline_setup.constants import *
 
-# TODO - update pydantic variables to fields with descriptions
+
 class AbstractRagChain(RagChainPlugins, BaseModel, ABC):
+
     alias: str
 
     _logger: logging.Logger = PrivateAttr()

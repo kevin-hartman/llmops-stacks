@@ -15,6 +15,13 @@ SERVICE_PRINCIPAL_CLIENT_ID_VALUE = "service_principal_client_id"
 SERVICE_PRINCIPAL_CLIENT_ID_SECRET = "service_principal_client_secret"
 
 class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
+    """
+    Abstract base class for LangChain-compatible vector store implementations.
+
+    This class extends AbstractBaseVectorStore to provide a standardized framework
+    for integrating various LangChain vector stores into the agentic pipeline.
+    """
+
     _vector_store: VectorStore = PrivateAttr()
 
     def __init__(self, **kwargs):
@@ -42,10 +49,22 @@ class AbstractLangChainVectorStore(AbstractBaseVectorStore, ABC):
 
 
 class DatabricksVectorStore(AbstractLangChainVectorStore):
+    """
+    Vector store implementation for Databricks Vector Search.
+
+    This class provides integration with Databricks Vector Search service as a
+    vector store backend for agentic pipelines. It handles authentication via service
+    principal credentials stored in environment variables and configures the
+    connection to a specific vector index within a Databricks workspace.
+    """
+
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class ClientArgs(TypedDict):
         workspace_url: str
+        service_principal_client_id: str
+        service_principal_client_secret: str
 
     index_name: str
     endpoint_name: Optional[str] = None

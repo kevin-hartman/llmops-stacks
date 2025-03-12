@@ -6,6 +6,29 @@ from pydantic import BaseModel, PrivateAttr
 from rag_pipeline_setup.rag_language_model.language_model_plugins import LanguageModelPlugins
 
 class AbstractBaseLLM(LanguageModelPlugins, BaseModel, ABC):
+    """
+    Abstract base class for language Model implementations in agentic pipelines.
+
+    This class serves as the foundation for all language model implementations,
+    providing common functionality for logging, initialization, and access control.
+    Concrete subclasses must implement specific language model functionality
+    while adhering to this interface.
+
+    The AbstractBaseLLM ensures consistent behavior across different
+    implementations, allowing them to be used interchangeably
+    within the agentic pipeline.
+
+    Attributes:
+        model_name (str): The formal name of the model being used.
+
+        alias (str): A unique identifier for this language model.
+            Used for logging and referencing the model throughout the system.
+
+    Private Attributes:
+        _logger (logging.Logger): Instance-specific logger with customized name.
+        _llm_model (Any): The underlying language model implementation.
+    """
+
     """The model name reference."""
     model_name: str
     """Internal name used for referencing."""

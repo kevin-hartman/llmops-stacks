@@ -12,6 +12,14 @@ from rag_pipeline_setup.rag_language_model.base_language_model import AbstractBa
 
 
 class AbstractLangChainLLM(AbstractBaseLLM, ABC):
+    """
+    Abstract base class for LangChain LLM integrations.
+
+    This class defines a standardized initialization process for language models,
+    with abstract methods that concrete subclasses must implement to customize
+    the setup process for specific LLM providers.
+    """
+
     _llm: BaseChatModel = PrivateAttr(default=None)
 
     def __init__(self, **kwargs):
@@ -39,6 +47,14 @@ class AbstractLangChainLLM(AbstractBaseLLM, ABC):
 
 
 class DatabricksLLM(AbstractLangChainLLM):
+    """
+    LangChain integration for Databricks language models.
+
+    This class provides a wrapper for Databricks' language models, handling
+    authentication via service principal credentials and configuring the
+    model with appropriate parameters.
+    """
+
     model_name: str
     temperature: float = 0.0
     n: int = 1

@@ -6,6 +6,29 @@ from pydantic import BaseModel, PrivateAttr
 from rag_pipeline_setup.rag_embedding_model.embedding_model_plugins import EmbeddingModelPlugins
 
 class AbstractBaseEmbeddingModel(EmbeddingModelPlugins, BaseModel, ABC):
+    """
+    Abstract base class for embedding model implementations in Agentic pipelines.
+
+    This class serves as the foundation for all embedding model implementations,
+    providing common functionality for logging, initialization, and access control.
+    Concrete subclasses must implement specific embedding model functionality
+    while adhering to this interface.
+
+    The AbstractBaseEmbeddingModel ensures consistent behavior across different
+    embedding modele implementations, allowing them to be used interchangeably
+    within the RAG pipeline.
+
+    Attributes:
+        model_name (str): The formal name of the model being used.
+
+        alias (str): A unique identifier for this embedding model instance.
+            Used for logging and referencing the embedding model throughout the system.
+
+    Private Attributes:
+        _logger (logging.Logger): Instance-specific logger with customized name.
+        _embedding_model (Any): The underlying embedding_model implementation.
+    """
+
     """The model name reference."""
     model_name: str
     """Internal name used for referencing."""

@@ -1,0 +1,197 @@
+# Databricks notebook source
+# MAGIC %load_ext autoreload
+# MAGIC %autoreload 2
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %pip install --quiet -U mlflow==2.20.3 langchain==0.3.6 databricks-langchain==0.2.0
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+import os
+
+# Notebook Environment
+dbutils.widgets.dropdown("env", "staging", ["staging", "prod"], "Environment Name")
+env = dbutils.widgets.get("env")
+
+
+"""This demo utilized principal based authentication for use by the served models
+Ref: https://docs.databricks.com/aws/en/security/secrets/?language=Databricks%C2%A0CLI
+"""
+os.environ["DATABRICKS_CLIENT_ID"] = dbutils.secrets.get(scope = f"db_{env}", key = "db_client_id")
+os.environ["DATABRICKS_CLIENT_SECRET"] = dbutils.secrets.get(scope = f"db_{env}", key = "db_client_secret")
+os.environ["DATABRICKS_HOST"] = dbutils.secrets.get(scope = f"db_{env}", key = "db_host")
+os.environ["MLFLOW_ENABLE_DB_SDK"] = "true"
+
+# MLflow experiment name.
+dbutils.widgets.text(
+    "experiment_name",
+    f"/dev-{{template `experiment_base_name` .}}",
+    label="MLflow experiment name",
+)
+
+# Unity Catalog registered model name to use for the trained model.
+dbutils.widgets.text(
+    "model_name", "dev.{{ .input_schema_name }}.{{template `model_name` .}}", label="Full (Three-Level) Model Name"
+)
+
+# COMMAND ----------
+
+from rag_pipeline_setup.rag_chain.rag_chain_plugins import RagChainPlugins
+
+# COMMAND ----------
+
+# MAGIC %%writefile rag_chain.py
+# MAGIC
+# MAGIC import os
+# MAGIC import sys
+# MAGIC
+# MAGIC cur_dir = os.getcwd()
+# MAGIC sys.path.append(cur_dir)
+# MAGIC
+# MAGIC from langchain_core.prompts import (
+# MAGIC     PromptTemplate,
+# MAGIC     ChatPromptTemplate,
+# MAGIC     MessagesPlaceholder,
+# MAGIC )
+# MAGIC
+# MAGIC from operator import itemgetter
+# MAGIC from langchain_core.runnables import RunnableLambda
+# MAGIC from langchain_core.output_parsers import StrOutputParser
+# MAGIC
+# MAGIC from yaml import safe_load
+# MAGIC from rag_pipeline_setup.rag_chain.rag_chain_plugins import RagChainPlugins
+# MAGIC from rag_pipeline_setup.rag_chain.rag_chain_plugins import RAGChainPluginsDiscovery
+# MAGIC import mlflow
+# MAGIC
+# MAGIC mlflow.langchain.autolog()
+# MAGIC
+# MAGIC RAGChainPluginsDiscovery().discover_rag_chain_plugins()
+# MAGIC
+# MAGIC mapping = mlflow.models.ModelConfig()
+# MAGIC
+# MAGIC rag_chain = RagChainPlugins.rag_chain_plugins.get(mapping.get('rag_chain_configs')['flavor'])
+# MAGIC rag_pipeline = rag_chain(**mapping.get('rag_chain_configs'))
+# MAGIC
+# MAGIC # Return the string contents of the most recent message from the user
+# MAGIC def extract_user_query_string(chat_messages_array):
+# MAGIC     return chat_messages_array[-1]["content"]
+# MAGIC
+# MAGIC def extract_previous_messages(chat_messages_array):
+# MAGIC     messages = "\n"
+# MAGIC     for msg in chat_messages_array[:-1]:
+# MAGIC         messages += (msg["role"] + ": " + msg["content"] + "\n")
+# MAGIC     return messages
+# MAGIC
+# MAGIC def combine_all_messages_for_vector_search(chat_messages_array):
+# MAGIC     return extract_previous_messages(chat_messages_array) + extract_user_query_string(chat_messages_array)
+# MAGIC
+# MAGIC # Method to format the docs returned by the retriever into the prompt
+# MAGIC def format_context(docs):
+# MAGIC     chunk_template = "Passage: {chunk_text}\n"
+# MAGIC     chunk_contents = [
+# MAGIC         chunk_template.format(
+# MAGIC             chunk_text=d.page_content,
+# MAGIC         )
+# MAGIC         for d in docs
+# MAGIC     ]
+# MAGIC     return "".join(chunk_contents)
+# MAGIC
+# MAGIC # Prompt Template for generation
+# MAGIC prompt = PromptTemplate(
+# MAGIC     template=rag_pipeline.base_template_dictionary["base_prompt_template"],
+# MAGIC     input_variables=["context", "chat_history", "question"]
+# MAGIC )
+# MAGIC
+# MAGIC vector_search_as_retriever = rag_pipeline.get_vector_store("db_vector_store").vector_store \
+# MAGIC                                 .as_retriever(search_kwargs={"k": 5, "query_type": "ann"})
+# MAGIC
+# MAGIC
+# MAGIC model = rag_pipeline.get_chat_model("chat_dbrx").llm
+# MAGIC
+# MAGIC # RAG Chain
+# MAGIC chain = (
+# MAGIC     {
+# MAGIC         "question": itemgetter("messages") | RunnableLambda(extract_user_query_string),
+# MAGIC         "context": itemgetter("messages")
+# MAGIC         | RunnableLambda(combine_all_messages_for_vector_search)
+# MAGIC         | vector_search_as_retriever
+# MAGIC         | RunnableLambda(format_context),
+# MAGIC         "chat_history": itemgetter("messages") | RunnableLambda(extract_previous_messages)
+# MAGIC     }
+# MAGIC     | prompt
+# MAGIC     | model
+# MAGIC     | StrOutputParser()
+# MAGIC )
+# MAGIC
+# MAGIC mlflow.models.set_model(model=chain)
+
+# COMMAND ----------
+
+import mlflow
+import os
+import re
+
+experiment_name = dbutils.widgets.get("experiment_name")
+model_name = dbutils.widgets.get("model_name")
+
+mlflow.set_registry_uri('databricks-uc')
+mlflow.set_experiment(experiment_name=experiment_name)
+
+packages = []
+file_path = "requirements.txt"
+
+if not os.path.exists(file_path):
+    raise FileNotFoundError(f"The file '{file_path}' was not found.")
+
+try:
+    with open(file_path, 'r') as file:
+        for line_number, line in enumerate(file, 1):
+            cleaned_line = line.strip()
+            if not cleaned_line or cleaned_line.startswith('#'):
+                continue
+
+            if not re.match(r'^[a-zA-Z0-9_\-\.]+[=<>~!]{1,2}[0-9a-zA-Z\.\-]+$', cleaned_line):
+                print(f"Warning: Line {line_number} '{cleaned_line}' doesn't follow standard package specification format.")
+
+            packages.append(cleaned_line)
+
+except UnicodeDecodeError:
+    raise UnicodeDecodeError("The file contains characters that cannot be decoded. Please ensure it's a valid text file.")
+except Exception as e:
+    raise Exception(f"An error occurred while reading '{file_path}': {str(e)}")
+
+if not packages:
+    print("Warning: No valid package specifications found in the file.")
+
+# Log the model to MLflow
+with mlflow.start_run():
+    logged_chain_info = mlflow.langchain.log_model(
+        lc_model=os.path.join(os.getcwd(), 'rag_chain.py'),  # Chain code file e.g., /path/to/the/chain.py 
+        artifact_path=model_name,  # Required by MLflow,
+        model_config="rag_pipeline_setup/configs/rag_config.yaml",
+        input_example={
+        "messages": [{"content": "Give detailed explanations on what RDDs do in Spark", "role": "user"}]
+    },  # Save the chain's input schema.  MLflow will execute the chain before logging & capture it's output schema.
+
+        pip_requirements=packages,
+        code_paths=[os.path.join(os.getcwd(), "rag_pipeline_setup")]
+    )
+
+# COMMAND ----------
+
+# Test the chain locally
+chain = mlflow.langchain.load_model(logged_chain_info.model_uri)
+chain.invoke({
+        "messages": [{"content": "Give detailed explanations on what RDDs do in Spark", "role": "user"}]
+    })
+
+# COMMAND ----------
+
+dbutils.jobs.taskValues.set("model_uri", logged_chain_info.model_uri)
+# To be used by downstream model serving notebooks
+dbutils.notebook.exit(logged_chain_info.model_uri)
+
+# COMMAND ----------

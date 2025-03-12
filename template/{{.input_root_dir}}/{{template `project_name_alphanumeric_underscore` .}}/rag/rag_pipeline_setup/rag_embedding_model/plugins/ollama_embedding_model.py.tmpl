@@ -8,6 +8,19 @@ from rag_pipeline_setup.rag_embedding_model.plugins.langchain_embedding_models i
 
 
 class OllamaEmbeddingModel(AbstractLangchainEmbeddingModel):
+    """
+    This class is present to enable local testing of the RAG pipeline setup
+    without utilizing any network connections.
+
+    The Ollama set of models can be setup locally by following steps outlined
+    at https://ollama.com/
+
+    By default, this class will not be rendered when the DAB is instantiated
+    and none of its dependencies are part of the environment created for the
+    rag pipeline.
+    This can be changed within update_layout.tmpl if needed
+    """
+
     base_url: Optional[str] = None
     http_client_kwargs: Optional[dict] = {}
 

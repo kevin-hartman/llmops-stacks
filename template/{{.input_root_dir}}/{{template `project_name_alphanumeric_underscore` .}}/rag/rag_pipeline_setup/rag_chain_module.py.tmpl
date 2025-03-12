@@ -10,7 +10,7 @@ from rag_pipeline_setup.rag_chain.rag_chain_plugins import RagChainPlugins
 from rag_pipeline_setup.rag_chain.rag_chain_plugins import RAGChainPluginsDiscovery
 
 RAGChainPluginsDiscovery().discover_rag_chain_plugins()
-with open("configs/rag_config.yaml") as stream:
+with open("configs/rag_config.yaml.tmpl") as stream:
     mapping = safe_load(stream)
 
 print(mapping)

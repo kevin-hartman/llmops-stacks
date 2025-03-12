@@ -1,3 +1,6 @@
+# Configuration file for the agentic pipeline
+#
+# Please see the README to for the correct usage of this file
 rag_chain_configs:
   flavor: langchain
   alias: "first_rag_pipeline"
@@ -18,8 +21,8 @@ rag_chain_configs:
     vector_stores:
       - flavor: langchain_databricks_vector_search
         alias: "db_vector_store"
-        index_name: "main.dbdemos_rag_chatbot.databricks_documentation_vs_index"
-        endpoint_name: dbdemos_vs_endpoint
+        index_name: "llmops_stacks.ai_agent_ops.databricks_documentation_vs_index"
+        endpoint_name: test_model_serving
         client_args:
           workspace_url: https://dbc-4d4ba769-eb53.cloud.databricks.com
         columns:

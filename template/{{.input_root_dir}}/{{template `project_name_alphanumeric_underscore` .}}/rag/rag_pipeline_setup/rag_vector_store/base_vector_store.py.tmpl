@@ -7,6 +7,27 @@ from rag_pipeline_setup.rag_vector_store.vector_store_plugins import VectorStore
 
 
 class AbstractBaseVectorStore(VectorStorePlugins, BaseModel, ABC):
+    """
+    Abstract base class for vector store implementations in Agentic pipelines.
+
+    This class serves as the foundation for all vector store implementations,
+    providing common functionality for logging, initialization, and access control.
+    Concrete subclasses must implement specific vector database functionality
+    while adhering to this interface.
+
+    The AbstractBaseVectorStore ensures consistent behavior across different
+    vector database implementations, allowing them to be used interchangeably
+    within the RAG pipeline.
+
+    Attributes:
+        alias (str): A unique identifier for this vector store instance.
+            Used for logging and referencing the vector store throughout the system.
+
+    Private Attributes:
+        _logger (logging.Logger): Instance-specific logger with customized name.
+        _vector_store (Any): The underlying vector store implementation.
+    """
+
     """Internal name used for referencing."""
     alias: str
 

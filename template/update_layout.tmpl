@@ -84,3 +84,4 @@
 {{ skip (printf `%s/%s` $root_dir `cicd`) }}
 {{ skip `update_layout` }}
 {{ skip `run_validations` }}
+{{ skip (printf `%s/%s/%s` $root_dir $project_name_alphanumeric_underscore `rag/rag_pipeline_setup/rag_embedding_model/plugins/ollama_embedding_model.py`) }}
