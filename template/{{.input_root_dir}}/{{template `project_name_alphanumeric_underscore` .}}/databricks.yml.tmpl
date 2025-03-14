@@ -9,7 +9,7 @@ variables:
   model_name:
     description: Model name for the model training.
     {{ if (eq .input_include_models_in_unity_catalog `no`) }}default: ${bundle.target}-{{template `model_name` .}}
-    {{- else -}}default: {{template `model_name` .}}{{end}}
+    {{- else -}}default: ${bundle.target}.{{ .input_schema_name }}.{{template `model_name` .}}{{end}}
 
 include:
   # Resources folder contains ML artifact resources for the ML project that defines model and experiment

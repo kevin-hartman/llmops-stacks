@@ -13,11 +13,14 @@
 import os
 
 # Notebook Environment
-dbutils.widgets.dropdown("env", "staging", ["staging", "prod"], "Environment Name")
+dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod"], "Environment Name")
 env = dbutils.widgets.get("env")
 
 
 """This demo utilized principal based authentication for use by the served models
+https://docs.databricks.com/aws/en/dev-tools/auth/oauth-m2m#what-are-my-options-for-authorization-and-authentication-when-using-a-databricks-service-principal
+
+The credentials are then accessed securely using Databricks Secret Management
 Ref: https://docs.databricks.com/aws/en/security/secrets/?language=Databricks%C2%A0CLI
 """
 os.environ["DATABRICKS_CLIENT_ID"] = dbutils.secrets.get(scope = f"db_{env}", key = "db_client_id")
@@ -28,14 +31,17 @@ os.environ["MLFLOW_ENABLE_DB_SDK"] = "true"
 # MLflow experiment name.
 dbutils.widgets.text(
     "experiment_name",
-    f"/dev-{{template `experiment_base_name` .}}",
+    f"/{env}/USER_ID/{{template `experiment_base_name` .}}",
     label="MLflow experiment name",
 )
 
 # Unity Catalog registered model name to use for the trained model.
 dbutils.widgets.text(
-    "model_name", "dev.{{ .input_schema_name }}.{{template `model_name` .}}", label="Full (Three-Level) Model Name"
+    "model_name", f"{env}.{{ .input_schema_name }}.{{template `model_name` .}}", label="Full (Three-Level) Model Name"
 )
+
+experiment_name = dbutils.widgets.get("experiment_name")
+model_name = dbutils.widgets.get("model_name")
 
 # COMMAND ----------
 
@@ -133,9 +139,6 @@ from rag_pipeline_setup.rag_chain.rag_chain_plugins import RagChainPlugins
 import mlflow
 import os
 import re
-
-experiment_name = dbutils.widgets.get("experiment_name")
-model_name = dbutils.widgets.get("model_name")
 
 mlflow.set_registry_uri('databricks-uc')
 mlflow.set_experiment(experiment_name=experiment_name)
