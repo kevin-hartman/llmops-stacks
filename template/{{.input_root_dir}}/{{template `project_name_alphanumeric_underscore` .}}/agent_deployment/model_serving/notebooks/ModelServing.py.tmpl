@@ -1,0 +1,209 @@
+# Databricks notebook source
+# MAGIC %load_ext autoreload
+# MAGIC %autoreload 2
+# MAGIC # Enables autoreload; learn more at https://docs.databricks.com/en/files/workspace-modules.html#autoreload-for-python-modules
+# MAGIC # To disable autoreload; run %autoreload 0
+
+# COMMAND ----------
+
+##################################################################################
+# Helper notebook to serve the model on an endpoint. This notebook is run
+# after the ModelDeployment.py notebook as part of a multi-task job, in order to serve the model
+# on an endpoint stage after transitioning the latest version.
+#
+# Parameters:
+# * model_uri (required)      - URI of the model to deploy. Must be in the format "models:/<name>/<version-id>", as described in
+#                                https://www.mlflow.org/docs/latest/model-registry.html#fetching-an-mlflow-model-from-the-model-registry
+#                                This parameter is read as a task value
+#                                ({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/databricks-utils.html")) }}),
+#                                rather than as a notebook widget. That is, we assume a preceding task (the Train.py
+#                                notebook) has set a task value with key "model_uri".
+# * scale_to_zero (required)  - Specify if the endpoint should scale to zero when not in use.
+# * workload_size (required)  - Specify  the size of the compute scale out that corresponds with the number of requests this served 
+#                                model can process at the same time. This number should be roughly equal to QPS x model run time.
+# * model_alias (required)    - Alias to tag the model with in the registry
+#
+# Widgets:
+# * Scale to zero: Whether the clusters should scale to zero (requiring more time at startup after inactivity).
+# * Workload Size: Compute that matches estimated number of requests for the endpoint.
+# * Model Alias: Text widget to input the alias tagged to the registered model
+#
+# Usage:
+# 1. Set the appropriate values for the widgets.
+# 2. Add members that you want to grant access to for the review app to the user_list
+# 3. Run to deploy endpoint
+#
+##################################################################################
+
+# COMMAND ----------
+
+# List of input args needed to run the notebook as a job.
+# Provide them via DB widgets or notebook arguments.
+#
+# Scale to zero
+# List of input args needed to run the notebook as a job.
+# Provide them via DB widgets or notebook arguments.
+
+# A Unity Catalog containing the preprocessd data
+dbutils.widgets.text(
+    "uc_catalog",
+    "llmops_stacks",
+    label="Unity Catalog",
+)
+# Name of schema
+dbutils.widgets.text(
+    "schema",
+    "ai_agent_ops",
+    label="Schema",
+)
+
+# Name of model to register in mlflow
+dbutils.widgets.text(
+    "registered_model",
+    "agent_function_chatbot",
+    label="Registered model name",
+)
+
+# Scale to zero
+dbutils.widgets.dropdown("scale_to_zero", "True", ["True", "False"], "Scale to zero")
+# Workdload size
+dbutils.widgets.dropdown("workload_size", "Small", ["Small", "Medium", "Large"], "Workload Size")
+# Model alias
+dbutils.widgets.text(
+    "model_alias",
+    "agent_latest",
+    label="Model Alias",
+)
+
+# COMMAND ----------
+
+# MAGIC # %pip install -qqq -r ../../../requirements.txt
+# MAGIC %pip install mlflow==2.20.0 databricks-agents
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+uc_catalog = dbutils.widgets.get("uc_catalog")
+schema = dbutils.widgets.get("schema")
+registered_model = dbutils.widgets.get("registered_model")
+
+scale_to_zero = bool(dbutils.widgets.get("scale_to_zero"))
+workload_size = dbutils.widgets.get("workload_size")
+model_alias = dbutils.widgets.get("model_alias")
+
+assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
+assert schema != "", "schema notebook parameter must be specified"
+assert registered_model != "", "registered_model notebook parameter must be specified"
+assert scale_to_zero != "", "scale_to_zero notebook parameter must be specified"
+assert workload_size != "", "workload_size notebook parameter must be specified"
+# COMMAND ----------
+
+import os
+notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
+%cd $notebook_path
+%cd ../../model_serving
+
+# COMMAND ----------
+
+from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+
+#schema="default"
+model_name=f"{uc_catalog}.{schema}.{registered_model}"
+model_version = 1
+
+print(f"Model name is: f{model_name}")
+
+
+# COMMAND ----------
+
+from databricks.sdk.service.serving import ServedModelInputWorkloadSize
+ws_dict = {
+    'Small' : ServedModelInputWorkloadSize.SMALL, 
+    'Medium' : ServedModelInputWorkloadSize.MEDIUM, 
+    'Large' : ServedModelInputWorkloadSize.LARGE
+} 
+workload_size = ws_dict[workload_size]
+
+# COMMAND ----------
+
+instructions_to_reviewer = f"""### Instructions for Testing the our Chatbot assistant
+
+Your inputs are invaluable for the development team. By providing detailed feedback and corrections, you help us fix issues and improve the overall quality of the application. We rely on your expertise to identify any gaps or areas needing enhancement.
+
+1. **Variety of Questions**:
+   - Please try a wide range of questions that you anticipate the end users of the application will ask. This helps us ensure the application can handle the expected queries effectively.
+
+2. **Feedback on Answers**:
+   - After asking each question, use the feedback widgets provided to review the answer given by the application.
+   - If you think the answer is incorrect or could be improved, please use "Edit Answer" to correct it. Your corrections will enable our team to refine the application's accuracy.
+
+3. **Review of Returned Documents**:
+   - Carefully review each document that the system returns in response to your question.
+   - Use the thumbs up/down feature to indicate whether the document was relevant to the question asked. A thumbs up signifies relevance, while a thumbs down indicates the document was not useful.
+
+Thank you for your time and effort in testing our assistant. Your contributions are essential to delivering a high-quality product to our end users."""
+
+# COMMAND ----------
+
+from databricks import agents
+
+# Important when logging chain
+# mlflow.models.set_retriever_schema is required to:
+# 1. Enable the RAG Studio Review App to properly display retrieved chunks
+# 2. Enable evaluation suite to measure the retriever
+
+# Deploy to enable the Review APP and create an API endpoint
+# Note it deploys model on endpoint and enables inference table
+# deployment_info = agents.deploy(model_name=model_name, model_version=model_version, scale_to_zero=scale_to_zero, workload_size=workload_size)
+deployment_info = agents.deploy(model_name=model_name, model_version=model_version, scale_to_zero=True)
+
+# Add the user-facing instructions to the Review App
+agents.set_review_instructions(model_name, instructions_to_reviewer)
+# COMMAND ----------
+
+from serving import wait_for_model_serving_endpoint_to_be_ready
+wait_for_model_serving_endpoint_to_be_ready(deployment_info.endpoint_name)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC If you need human-in-the-loop feedback, you can implement the [review app](https://docs.databricks.com/aws/en/generative-ai/agent-evaluation/review-app) here.
+
+# COMMAND ----------
+
+#TODO grant your stakeholders permissions to use the Review App
+user_list = ["firstname.lastname@company.com"]
+
+# Set the permissions.
+
+agents.set_permissions(model_name=model_name, users=user_list, permission_level=agents.PermissionLevel.CAN_QUERY)
+
+print(f"Share this URL with your stakeholders: {deployment_info.review_app_url}")
+
+# COMMAND ----------
+
+#for deployment in agents.list_deployments():
+#  if deployment.model_name == model_name:
+#    print(f"Review App URL: {deployment.review_app_url}")   
+
+# COMMAND ----------
+
+# To query the endpoint we can do
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+
+w = WorkspaceClient()
+messages = []
+messages.append(ChatMessage(content="What is MLflow?", role=ChatMessageRole.USER))
+response = w.serving_endpoints.query(
+    name=deployment_info.endpoint_name,
+    messages=messages,
+    temperature=1.0,
+    stream=False,
+)
+print(response.choices[0].message.content)

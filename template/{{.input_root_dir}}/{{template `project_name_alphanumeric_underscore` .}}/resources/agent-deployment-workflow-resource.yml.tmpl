@@ -1,0 +1,68 @@
+common_permissions: &permissions
+  permissions:
+    - level: CAN_VIEW
+      group_name: users
+
+resources:
+  jobs:
+    agent_development_job:
+      name: ${bundle.target}-{{ .input_project_name }}-agent-deployment-job
+      tasks:
+        - task_key: AgentDevelopment
+          notebook_task:
+            notebook_path: ../agent_development/agent_chain/notebooks/AgentChain.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              vector_search_endpoint: test_model_serving
+              vector_search_index: databricks_documentation_vs_index
+              agent_model_endpoint: databricks-meta-llama-3-3-70b-instruct
+              registered_model: agent_function_chatbot
+              max_words: 20
+              model_alias: agent_latest
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+        - task_key: AgentEvaluation
+          depends_on:
+            - task_key: AgentDevelopment
+          notebook_task:
+            notebook_path: ../agent_development/agent_evaluation/notebooks/AgentEvaluation.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              eval_table: databricks_documentation_eval
+              registered_model: agent_function_chatbot
+              model_version: 1
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+        - task_key: AgentDeployment
+          depends_on:
+            - task_key: AgentEvaluation
+          notebook_task:
+            notebook_path: ../agent_deployment/model_serving/notebooks/ModelServing.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              registered_model: agent_function_chatbot
+              scale_to_zero: True
+              workload_size: Small
+              model_alias: agent_latest
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+      # schedule:
+      #  quartz_cron_expression: "0 0 7 * * ?" # daily at 7am
+      #  timezone_id: UTC
+      <<: *permissions
+      # If you want to turn on notifications for this job, please uncomment the below code,
+      # and provide a list of emails to the on_failure argument.
+      #
+      #  email_notifications:
+      #    on_failure:
+      #      - first@company.com
+      #      - second@company.com

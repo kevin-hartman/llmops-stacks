@@ -1,0 +1,1 @@
+databricks apps create dash-chatbot-app

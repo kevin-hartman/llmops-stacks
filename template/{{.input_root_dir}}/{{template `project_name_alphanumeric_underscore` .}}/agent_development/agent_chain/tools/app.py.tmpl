@@ -1,0 +1,82 @@
+from mlflow.models import set_model
+from unitycatalog.ai.core.base import set_uc_function_client
+from unitycatalog.ai.core.databricks import DatabricksFunctionClient
+from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, START, StateGraph, MessagesState
+from typing import Annotated, Literal, TypedDict
+from unitycatalog.ai.langchain.toolkit import UCFunctionToolkit
+from databricks_langchain import ChatDatabricks, VectorSearchRetrieverTool
+from langchain_core.tools import tool
+import os
+
+uc_catalog = "llmops_stacks"
+schema = "ai_agent_ops"
+vector_search_endpoint = "databricks_documentation_vs_index"
+
+python_execution_function_name = f"{uc_catalog}.{schema}.execute_python_code"
+ask_ai_function_name = f"{uc_catalog}.{schema}.ask_ai"
+summarization_function_name = f"{uc_catalog}.{schema}.summarize"
+translate_function_name = f"{uc_catalog}.{schema}.translate"
+
+# Retriever
+@tool
+def retrieve_function(query: str) -> str:
+    """Retrieve from Databricks Vector Search using the query."""
+
+    index = f"{uc_catalog}.{schema}.databricks_documentation_vs_index"
+
+    # Define the Vector Search Retriever Tool
+    vs_tool = VectorSearchRetrieverTool(
+        index_name=index,  # Replace with your index name
+        tool_name="vector_search_retriever",
+        tool_description="Retrieves information from Databricks Vector Search.",
+        embedding_model_name="databricks-bge-large-en",  # Embedding model
+        num_results=1,  # Number of results to return
+        columns=["url", "content"],  # Columns to include in search results
+        query_type="ANN"  # Query type (ANN or HYBRID)
+    )
+
+    response = vs_tool.invoke(query)
+    return f"{response[0].metadata['url']}  \n{response[0].page_content}"
+
+# Add tools here
+toolkit = UCFunctionToolkit(
+    function_names=[
+        python_execution_function_name,
+        # ask_ai_function_name, # commenting out to showcase retriever
+        summarization_function_name,
+        translate_function_name,
+    ]
+)
+uc_tools = toolkit.tools
+
+tools = uc_tools + [retrieve_function]
+
+tool_node = ToolNode(tools)
+
+model = ChatDatabricks(
+    endpoint=f"databricks-meta-llama-3-3-70b-instruct",  # Foundation Model endpoint name
+).bind_tools(tools)
+
+def should_continue(state: MessagesState) -> Literal["tools", END]:
+    messages = state['messages']
+    last_message = messages[-1]
+    if last_message.tool_calls:
+        return "tools"
+    return END
+
+def call_model(state: MessagesState):
+    messages = state['messages']
+    response = model.invoke(messages)
+    return {"messages": [response]}
+
+workflow = StateGraph(MessagesState)
+workflow.add_node("agent", call_model)
+workflow.add_node("tools", tool_node)
+workflow.add_edge(START, "agent")
+workflow.add_conditional_edges("agent", should_continue)
+workflow.add_edge("tools", 'agent')
+
+app = workflow.compile()
+set_model(app)
