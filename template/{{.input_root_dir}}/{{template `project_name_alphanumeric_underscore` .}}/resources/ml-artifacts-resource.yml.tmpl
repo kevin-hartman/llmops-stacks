@@ -1,0 +1,28 @@
+# Allow users to read the experiment 
+common_permissions: &permissions
+  permissions:
+    - level: CAN_READ
+      group_name: users
+
+# Allow users to execute models in Unity Catalog
+grants: &grants
+  grants:
+    - privileges:
+        - EXECUTE
+      principal: account users
+
+# Defines model and experiments
+resources:
+  registered_models:
+      model:
+        name: ${var.registered_model}
+        catalog_name: ${bundle.target}
+        schema_name: ai_agent_ops_example_project
+        comment: Registered model in Unity Catalog for the "mlops-example-project" ML Project for ${bundle.target} deployment target.
+        <<: *grants
+
+  experiments:
+    experiment:
+      name: ${var.experiment}
+      <<: *permissions
+      description: MLflow Experiment used to track runs for ai_agent_ops_example_project project.
