@@ -1,4 +1,4 @@
-# Databricks LLMOps Stacks
+# Dtabricks LLMOps Stacks
 
 > **_NOTE:_**  This feature is in [private preview](https://docs.databricks.com/release-notes/release-types.html).
 
