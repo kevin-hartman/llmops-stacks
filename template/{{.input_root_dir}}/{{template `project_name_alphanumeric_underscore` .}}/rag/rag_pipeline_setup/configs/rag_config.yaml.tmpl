@@ -1,0 +1,32 @@
+# Configuration file for the agentic pipeline
+#
+# Please see the README to for the correct usage of this file
+rag_chain_configs:
+  flavor: langchain
+  alias: "first_rag_pipeline"
+  pipeline_configs:
+    prompt_templates:
+      base_prompt_template: "You are a trusted assistant that helps answer questions based only on the provided information. If you do not know the answer to a question, you truthfully say you do not know.  Here is some context which might or might not help you answer: {context}.  Answer directly, do not repeat the question, do not start with something like: the answer to the question, do not add AI in front of your answer, do not say: here is the answer, do not mention the context or the question. Based on this context, answer this question: {question}"
+    embedding_models:
+      - flavor: langchain_databricks
+        model_name: databricks-gte-large-en
+        alias: "query_embedding_model"
+    llms:
+      - flavor: langchain_chat_databricks
+        model_name: databricks-dbrx-instruct
+        alias: chat_dbrx
+        extra_params:
+          max_tokens: 1500
+          temperature: 0.01
+    vector_stores:
+      - flavor: langchain_databricks_vector_search
+        alias: "db_vector_store"
+        index_name: "llmops_stacks.ai_agent_ops.databricks_documentation_vs_index"
+        endpoint_name: test_model_serving
+        client_args:
+          # TODO: add workspace url
+          workspace_url:
+        columns:
+          - "id"
+          - "content"
+          - "url"

@@ -1,0 +1,462 @@
+# Databricks notebook source
+# MAGIC %load_ext autoreload
+# MAGIC %autoreload 2
+# MAGIC # Enables autoreload; learn more at https://docs.databricks.com/en/files/workspace-modules.html#autoreload-for-python-modules
+# MAGIC # To disable autoreload; run %autoreload 0
+
+# COMMAND ----------
+
+################################################################################### 
+# Agent Chain Creation
+#
+# This notebook shows an example of a RAG-based Agent with multiple retrievers.
+#
+# Parameters:
+# * uc_catalog (required)                     - Name of the Unity Catalog 
+# * schema (required)                         - Name of the schema inside Unity Catalog 
+# * vector_search_endpoint (required)         - Name of the vector search endpoint
+# * vector_search_index (required)            - Name of the vector search index
+# * model_serving_endpopint                   - Name of the model endpoint to serve
+# * agent_model_endpoi t (required)           - Name and Identifier of the agent model endpoint
+# * registered_model (required)               - Name of the model to register in mlflow
+# * max_words (required)                      - Maximum number of words to return in the response
+# * model_alias (required)                    - Alias to tag the model with in the registry
+#
+# Widgets:
+# * Unity Catalog: Text widget to input the name of the Unity Catalog
+# * Schema: Text widget to input the name of the database inside the Unity Catalog
+# * Vector Search endpoint: Text widget to input the name of the vector search endpoint
+# * Vector search index: Text widget to input the name of the vector search index
+# * Agent model endppoint: Text widget to input the name of the agent model endpoint
+# * Registered model name: Text widget to input the name of the model to register in mlflow
+# * Max words: Text widget to input the maximum integer number of words to return in the response
+# * Model Alias: Text widget to input the alias tagged to the registered model
+#
+# Usage:
+# 1. Set the appropriate values for the widgets.
+# 2. Run the pipeline to create and register an agent with tool calling.
+#
+##################################################################################
+
+# COMMAND ----------
+
+# MAGIC %pip install -qqqq -r ../../agent_requirements.txt
+
+# COMMAND ----------
+
+# List of input args needed to run this notebook as a job
+# Provide them via DB widgets or notebook arguments
+
+# A Unity Catalog containing the preprocessd data
+dbutils.widgets.text(
+    "uc_catalog",
+    "ai_agent_stacks",
+    label="Unity Catalog",
+)
+# Name of schema
+dbutils.widgets.text(
+    "schema",
+    "ai_agent_ops",
+    label="Schema",
+)
+# Name of vector search endpoint containing the preprocessed index
+dbutils.widgets.text(
+    "vector_search_endpoint",
+    "ai_agent_endpoint",
+    label="Vector Search endpoint",
+)
+# Name of vector search index containing the preprocessed index
+dbutils.widgets.text(
+    "vector_search_index",
+    "databricks_documentation_vs_index",
+    label="Vector Search index",
+)
+# Model to use.
+dbutils.widgets.text(
+    "agent_model_endpoint",
+    "databricks-meta-llama-3-3-70b-instruct",
+    label="Agent model name",
+)
+# Name of model to register in mlflow
+dbutils.widgets.text(
+    "registered_model",
+    "agent_function_chatbot",
+    label="Registered model name",
+)
+# Max words for summarization
+dbutils.widgets.text(
+    "max_words",
+    "20",
+    label="Max Words",
+)
+# Model alias
+dbutils.widgets.text(
+    "model_alias",
+    "agent_latest",
+    label="Model Alias",
+)
+
+# COMMAND ----------
+
+import os
+notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
+%cd $notebook_path
+%cd ../tools
+
+# COMMAND ----------
+
+uc_catalog = dbutils.widgets.get("uc_catalog")
+schema = dbutils.widgets.get("schema")
+vector_search_endpoint = dbutils.widgets.get("vector_search_endpoint")
+vector_search_index = dbutils.widgets.get("vector_search_index")
+agent_model_endpoint = dbutils.widgets.get("agent_model_endpoint")
+registered_model = dbutils.widgets.get("registered_model")
+max_words = dbutils.widgets.get("max_words")
+model_alias = dbutils.widgets.get("model_alias")
+
+assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
+assert schema != "", "schema notebook parameter must be specified"
+assert vector_search_endpoint != "", "vector_search_endpoint notebook parameter must be specified"
+assert vector_search_index != "", "vector_search_index notebook parameter must be specified"
+assert agent_model_endpoint != "", "agent_model_endpoint notebook parameter must be specified"
+assert registered_model != "", "registered_model notebook parameter must be specified"
+assert max_words != "", "max_words notebook parameter must be specified"
+assert model_alias != "", "model_alias notebook parameter must be specified"
+
+# COMMAND ----------
+
+# DBTITLE 1,Create a DatabricksFunctionClient and set as default
+from unitycatalog.ai.core.base import set_uc_function_client
+from unitycatalog.ai.core.databricks import DatabricksFunctionClient
+
+client = DatabricksFunctionClient()
+
+# sets the default uc function client
+set_uc_function_client(client)
+
+
+# COMMAND ----------
+
+# DBTITLE 1,Function: execute_python_code
+from ai_tools import execute_python_code
+    
+#schema = "default"
+
+function_info = client.create_python_function(
+    func=execute_python_code, catalog=uc_catalog, schema=schema, replace=True
+)
+python_execution_function_name = function_info.full_name
+
+# test execution
+client.execute_function(python_execution_function_name, {"code": "print(1+1)"})
+
+# COMMAND ----------
+
+# DBTITLE 1,Function: ai_function_name_sql
+from ai_tools import ask_ai_function
+
+ask_ai_function_name = f"{uc_catalog}.{schema}.ask_ai"
+
+client.create_function(sql_function_body = ask_ai_function.format(ask_ai_function_name = ask_ai_function_name))
+result = client.execute_function(ask_ai_function_name, {"question": "What is MLflow?"})
+result.value
+
+# COMMAND ----------
+
+# DBTITLE 1,Function: summarization_function
+from ai_tools import summarization_function
+
+summarization_function_name = f"{uc_catalog}.{schema}.summarize"
+
+client.create_function(sql_function_body = summarization_function.format(summarization_function_name = summarization_function_name))
+# test execution
+client.execute_function(summarization_function_name, {"text": result.value, "max_words": int(max_words)})
+
+# COMMAND ----------
+
+# DBTITLE 1,Function: translate_function
+from ai_tools import translate_function
+
+translate_function_name = f"{uc_catalog}.{schema}.translate"
+
+client.create_function(sql_function_body = translate_function.format(translate_function_name = translate_function_name))
+# test execution
+client.execute_function(translate_function_name, {"content": "What is MLflow?", "language": "es"})
+
+# COMMAND ----------
+
+# DBTITLE 1,Define UC toolkit
+from unitycatalog.ai.langchain.toolkit import UCFunctionToolkit
+
+# Add tools here
+toolkit = UCFunctionToolkit(
+    function_names=[
+        python_execution_function_name,
+        # ask_ai_function_name, # commenting out to showcase the retriever
+        summarization_function_name,
+        translate_function_name,
+    ]
+)
+
+uc_tools = toolkit.tools
+uc_tools
+
+# COMMAND ----------
+
+# DBTITLE 1,Import retriever_function
+from ai_tools import retrieve_function
+
+os.environ["UC_CATALOG"] = uc_catalog # Set these before function execution
+os.environ["SCHEMA"] = schema
+os.environ["VECTOR_SEARCH_INDEX"] = vector_search_index
+
+# retrieve_function("what is mlflow?") # Remove @tool from the retrieve_function in ai_tools.py to test
+
+# COMMAND ----------
+
+# DBTITLE 1,Initialize MLflow
+import os
+import mlflow
+
+mlflow.langchain.autolog()
+
+# COMMAND ----------
+
+# DBTITLE 1,Use the tools in Langgraph
+from typing import Literal
+from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode
+from databricks_langchain import ChatDatabricks
+
+tools = uc_tools + [retrieve_function]
+
+tool_node = ToolNode(tools)
+
+# Example for Databricks foundation model endpoints
+model = ChatDatabricks(
+    endpoint=f"{agent_model_endpoint}",  # Foundation Model endpoint name
+).bind_tools(tools)
+
+# Define the function that determines whether to continue or not
+def should_continue(state: MessagesState) -> Literal["tools", END]:
+    messages = state["messages"]
+    last_message = messages[-1]
+    # If the LLM makes a tool call, then we route to the "tools" node
+    if last_message.tool_calls:
+        return "tools"
+    # Otherwise, we stop (reply to the user)
+    return END
+
+
+# Define the function that calls the model
+def call_model(state: MessagesState):
+    messages = state["messages"]
+    response = model.invoke(messages)
+    # We return a list, because this will get added to the existing list
+    return {"messages": [response]}
+
+
+# Define a new graph
+workflow = StateGraph(MessagesState)
+
+# Define the two nodes we will cycle between
+workflow.add_node("agent", call_model)
+workflow.add_node("tools", tool_node)
+
+# Set the entrypoint as `agent`
+# This means that this node is the first one called
+workflow.add_edge(START, "agent")
+
+# We now add a conditional edge
+workflow.add_conditional_edges(
+    # First, we define the start node. We use `agent`.
+    # This means these are the edges taken after the `agent` node is called.
+    "agent",
+    # Next, we pass in the function that will determine which node is called next.
+    should_continue,
+)
+
+# We now add a normal edge from `tools` to `agent`.
+# This means that after `tools` is called, `agent` node is called next.
+workflow.add_edge("tools", "agent")
+
+app = workflow.compile()
+
+# COMMAND ----------
+
+final_state = app.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Retrieve the documentation for MLflow. Keep the response concise and reply in Spanish. Try using as many tools as possible",
+            }
+        ]
+    },
+)
+response = final_state["messages"][-1].content
+response
+
+# COMMAND ----------
+
+final_state = app.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": f"Remember to always try using tools. Can you convert the following explanation to English? {response}",
+            }
+        ]
+    },
+)
+final_state["messages"][-1].content
+
+# COMMAND ----------
+
+final_state = app.invoke(
+    {"messages": [{"role": "user", "content": "What is MLflow?"}]},
+)
+final_state["messages"][-1].content
+
+# COMMAND ----------
+
+# DBTITLE 1,Log the model using MLflow
+# MAGIC %%writefile app.py
+# MAGIC from mlflow.models import set_model
+# MAGIC from unitycatalog.ai.core.base import set_uc_function_client
+# MAGIC from unitycatalog.ai.core.databricks import DatabricksFunctionClient
+# MAGIC from langgraph.prebuilt import ToolNode
+# MAGIC from langgraph.checkpoint.memory import MemorySaver
+# MAGIC from langgraph.graph import END, START, StateGraph, MessagesState
+# MAGIC from typing import Annotated, Literal, TypedDict
+# MAGIC from unitycatalog.ai.langchain.toolkit import UCFunctionToolkit
+# MAGIC from databricks_langchain import ChatDatabricks, VectorSearchRetrieverTool
+# MAGIC from langchain_core.tools import tool
+# MAGIC import os
+# MAGIC
+# MAGIC uc_catalog = "llmops_stacks"
+# MAGIC #schema = "default"
+# MAGIC schema = "ai_agent_ops"
+# MAGIC vector_search_endpoint = "databricks_documentation_vs_index"
+# MAGIC
+# MAGIC python_execution_function_name = f"{uc_catalog}.{schema}.execute_python_code"
+# MAGIC ask_ai_function_name = f"{uc_catalog}.{schema}.ask_ai"
+# MAGIC summarization_function_name = f"{uc_catalog}.{schema}.summarize"
+# MAGIC translate_function_name = f"{uc_catalog}.{schema}.translate"
+# MAGIC
+# MAGIC # Retriever
+# MAGIC @tool
+# MAGIC def retrieve_function(query: str) -> str:
+# MAGIC     """Retrieve from Databricks Vector Search using the query."""
+# MAGIC     
+# MAGIC     schema_v2 = "ai_agent_ops"
+# MAGIC     index = f"{uc_catalog}.{schema_v2}.databricks_documentation_vs_index"
+# MAGIC
+# MAGIC     # Define the Vector Search Retriever Tool
+# MAGIC     vs_tool = VectorSearchRetrieverTool(
+# MAGIC         index_name=index,  # Replace with your index name
+# MAGIC         tool_name="vector_search_retriever",
+# MAGIC         tool_description="Retrieves information from Databricks Vector Search.",
+# MAGIC         embedding_model_name="databricks-bge-large-en",  # Embedding model
+# MAGIC         num_results=1,  # Number of results to return
+# MAGIC         columns=["url", "content"],  # Columns to include in search results
+# MAGIC         query_type="ANN"  # Query type (ANN or HYBRID)
+# MAGIC     )
+# MAGIC
+# MAGIC     response = vs_tool.invoke(query)
+# MAGIC     return f"{response[0].metadata['url']}  \n{response[0].page_content}"
+# MAGIC
+# MAGIC # Add tools here
+# MAGIC toolkit = UCFunctionToolkit(
+# MAGIC     function_names=[
+# MAGIC         python_execution_function_name,
+# MAGIC         # ask_ai_function_name, # commenting out to showcase retriever
+# MAGIC         summarization_function_name,
+# MAGIC         translate_function_name,
+# MAGIC     ]
+# MAGIC )
+# MAGIC uc_tools = toolkit.tools
+# MAGIC
+# MAGIC tools = uc_tools + [retrieve_function]
+# MAGIC
+# MAGIC tool_node = ToolNode(tools)
+# MAGIC
+# MAGIC model = ChatDatabricks(
+# MAGIC     endpoint="databricks-meta-llama-3-3-70b-instruct",  # Foundation Model endpoint name
+# MAGIC ).bind_tools(tools)
+# MAGIC
+# MAGIC def should_continue(state: MessagesState) -> Literal["tools", END]:
+# MAGIC     messages = state['messages']
+# MAGIC     last_message = messages[-1]
+# MAGIC     if last_message.tool_calls:
+# MAGIC         return "tools"
+# MAGIC     return END
+# MAGIC
+# MAGIC def call_model(state: MessagesState):
+# MAGIC     messages = state['messages']
+# MAGIC     response = model.invoke(messages)
+# MAGIC     return {"messages": [response]}
+# MAGIC
+# MAGIC workflow = StateGraph(MessagesState)
+# MAGIC workflow.add_node("agent", call_model)
+# MAGIC workflow.add_node("tools", tool_node)
+# MAGIC workflow.add_edge(START, "agent")
+# MAGIC workflow.add_conditional_edges("agent", should_continue)
+# MAGIC workflow.add_edge("tools", 'agent')
+# MAGIC
+# MAGIC app = workflow.compile()
+# MAGIC set_model(app)
+
+# COMMAND ----------
+
+import mlflow
+from mlflow.models import infer_signature
+
+# temp workaround as the current output format is not supported by model signature
+input_example = {"messages": [{"role": "user", "content": "What is MLflow?"}]}
+signature = infer_signature(input_example, "MLflow is an open-source platform that streamlines the machine learning lifecycle by providing tools for experiment tracking, model packaging, versioning, and deployment.")
+
+with mlflow.start_run():
+    model_info = mlflow.langchain.log_model(
+        # Pass the path to the saved model file
+        "app.py",
+        "model",
+        input_example={"messages": [{"role": "user", "content": "What is MLflow?"}]},
+        signature=signature,
+        pip_requirements=[
+            "unitycatalog-langchain[databricks]==0.1.1",
+            "databricks-vectorsearch==0.50",
+            "databricks-langchain==0.4.0",
+            "langgraph==0.3.5",
+            "mlflow==2.20.3",
+        ],
+        registered_model_name=f"{uc_catalog}.{schema}.{registered_model}"  # Replace with your own model name
+    )
+
+# COMMAND ----------
+
+# DBTITLE 1,Set Alias
+from mlflow import MlflowClient
+
+# Initialize MLflow client
+client = MlflowClient()
+
+# Set an alias for version 1 of the registered model
+client.set_registered_model_alias(f"{uc_catalog}.{schema}.{registered_model}", model_alias, 1)
+
+
+# COMMAND ----------
+
+# DBTITLE 1,Validate the model locally prior to serving
+from mlflow.models import convert_input_example_to_serving_input, validate_serving_input
+
+serving_input = convert_input_example_to_serving_input(
+    {"messages": [{"role": "user", "content": "What is MLflow?"}]}
+)
+validate_serving_input(model_info.model_uri, serving_input=serving_input)
+
+# COMMAND ----------
+                                                 
+# DBTITLE 1, Set model uri in the task key
+dbutils.jobs.taskValues.set(key = "model_uri", value = model_info.model_uri)
+

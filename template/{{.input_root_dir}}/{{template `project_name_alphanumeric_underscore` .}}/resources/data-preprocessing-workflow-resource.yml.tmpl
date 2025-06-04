@@ -1,0 +1,60 @@
+common_permissions: &permissions
+  permissions:
+    - level: CAN_VIEW
+      group_name: users
+
+resources:
+  jobs:
+    data_preprocessing_job:
+      name: ${bundle.target}-{{ .input_project_name }}-data-preprocessing-job
+      tasks:
+        - task_key: PreprocessRawDataIngest
+          notebook_task:
+            notebook_path: ../data_preparation/data_ingestion/notebooks/DataIngestion.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              raw_data_table: raw_documentation
+              data_source_url: https://docs.databricks.com/en/doc-sitemap.xml
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+        - task_key: PreprocessRawData
+          depends_on:
+            - task_key: PreprocessRawDataIngest
+          notebook_task:
+            notebook_path: ../data_preparation/data_preprocessing/notebooks/DataPreprocessing.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              raw_data_table: raw_documentation
+              preprocessed_data_table: databricks_documentation
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
+        - task_key: CreateVectorSearch
+          depends_on:
+            - task_key: PreprocessRawData
+          notebook_task:
+            notebook_path: ../data_preparation/vector_search/notebooks/CreateVectorSearch.py
+            base_parameters:
+              # TODO modify these arguments to reflect your setup.
+              uc_catalog: llmops_stacks
+              schema: ai_agent_ops
+              vector_search_endpoint: test_model_serving
+              preprocessed_data_table: databricks_documentation
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+      # schedule:
+      #  quartz_cron_expression: "0 0 7 * * ?" # daily at 7am
+      #  timezone_id: UTC
+      <<: *permissions
+      # If you want to turn on notifications for this job, please uncomment the below code,
+      # and provide a list of emails to the on_failure argument.
+      #
+      #  email_notifications:
+      #    on_failure:
+      #      - first@company.com
+      #      - second@company.com
