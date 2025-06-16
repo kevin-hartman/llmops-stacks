@@ -5,10 +5,10 @@ bundle:
 variables:
   uc_catalog:
     description: Unity Catalog used to store data and artifacts.
-    default: ai_agent_stacks
+    default: {{ .input_catalog_name }}
   schema: 
     description: "Schema in Unity Catalog."
-    default: ai_agent_ops
+    default: {{ .input_schema_name }}
   raw_data_table:
     description: "Table in Unity Catalog to store raw data."
     default: raw_documentation
@@ -37,8 +37,9 @@ variables:
     description: "Vector Search index to populate."
     default: databricks_documentation_vs_index
   experiment:
+    # TODO: add your username or service-principal-id 
     description: "Experiment to log run under."
-    default: agent_function_chatbot
+    default: /Users/<user>/agent_function_chatbot
   registered_model:
     description: "Name of agent model to register."
     default: agent_function_chatbot
@@ -64,10 +65,10 @@ variables:
 include:
   # Resources folder contains Agent artifact resources for the Agent project that defines the agent
   # and workflows resources for data preparation -> agent creation & evaluation -> deployment
-  - ./resources/data-preprocessing-workflow-resource.yml
+  - ./resources/data-preparation-resource.yml
   - ./resources/ml-artifacts-resource.yml
   - ./resources/agent-resource.yml
-  - ./resources/model-workflow-resource.yml
+  - ./resources/app-deployment-resource.yml
 
 # Deployment Target specific values for workspace
 targets:
@@ -77,15 +78,14 @@ targets:
       # TODO: add dev workspace URL
       host:
 
-  {{ .input_staging_catalog_name }}:
+  stage:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
 
-  {{ .input_prod_catalog_name }}:
+  prod:
     workspace:
       host: {{template `databricks_prod_workspace_host` .}}
 
-  {{ .input_test_catalog_name }}:
+  test: 
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
-{{ end }}

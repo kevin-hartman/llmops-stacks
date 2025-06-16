@@ -16,8 +16,8 @@ resources:
   registered_models:
       model:
         name: ${var.registered_model}
-        catalog_name: ${bundle.target}
-        schema_name: ai_agent_ops_example_project
+        catalog_name: ${var.uc_catalog}
+        schema_name: ${var.schema}
         comment: Registered model in Unity Catalog for the "mlops-example-project" ML Project for ${bundle.target} deployment target.
         <<: *grants
 
@@ -25,4 +25,3 @@ resources:
     experiment:
       name: ${var.experiment}
       <<: *permissions
-      description: MLflow Experiment used to track runs for ai_agent_ops_example_project project.

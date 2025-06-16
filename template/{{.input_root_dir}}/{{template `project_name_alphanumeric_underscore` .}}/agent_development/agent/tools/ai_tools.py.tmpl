@@ -18,21 +18,21 @@ def execute_python_code(code: str) -> str:
     return stdout.getvalue()
 
 # AI function name
-ask_ai_function = f"""CREATE OR REPLACE FUNCTION {{ask_ai_function_name}}(question STRING COMMENT 'question to ask')
+ask_ai_function = """CREATE OR REPLACE FUNCTION {ask_ai_function_name}(question STRING COMMENT 'question to ask')
 RETURNS STRING
 COMMENT 'answer the question using chosen model'
 RETURN SELECT ai_gen(question)
 """
 
 # Summarization function
-summarization_function = f"""CREATE OR REPLACE FUNCTION {{summarization_function_name}}(text STRING COMMENT 'content to parse', max_words INT COMMENT 'max number of words in the response, must be non-negative integer, if set to 0 then no limit')
+summarization_function = """CREATE OR REPLACE FUNCTION {summarization_function_name}(text STRING COMMENT 'content to parse', max_words INT COMMENT 'max number of words in the response, must be non-negative integer, if set to 0 then no limit')
 RETURNS STRING
 COMMENT 'summarize the content and limit response to max_words'
 RETURN SELECT ai_summarize(text, max_words)
 """
 
 # Translate function
-translate_function = f"""CREATE OR REPLACE FUNCTION {{translate_function_name}}(content STRING COMMENT 'content to translate', language STRING COMMENT 'target language')
+translate_function = """CREATE OR REPLACE FUNCTION {translate_function_name}(content STRING COMMENT 'content to translate', language STRING COMMENT 'target language')
 RETURNS STRING
 COMMENT 'translate the content to target language, currently only english <-> spanish translation is supported'
 RETURN SELECT ai_translate(content, language)
