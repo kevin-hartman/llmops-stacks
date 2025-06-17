@@ -107,9 +107,8 @@ if not spark.catalog.tableExists(f"{raw_data_table}") or spark.table(f"{raw_data
     #Save them as to unity catalog
     doc_articles.write.mode('overwrite').saveAsTable(f"{raw_data_table}")
 
-# COMMAND ----------
+    doc_articles.display()
 
-doc_articles.display()
 
 # COMMAND ----------
 

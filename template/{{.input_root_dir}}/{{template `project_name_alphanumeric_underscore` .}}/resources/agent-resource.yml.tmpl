@@ -11,7 +11,7 @@ resources:
       tasks:
         - task_key: AgentDevelopment
           notebook_task:
-            notebook_path: ../agent_development/agent/notebooks/Agent.py
+            notebook_path: ../agent_development/agent/notebooks/Agent.ipynb
             base_parameters:
               uc_catalog: ${var.uc_catalog}
               schema: ${var.schema}
@@ -28,7 +28,7 @@ resources:
           depends_on:
             - task_key: AgentDevelopment
           notebook_task:
-            notebook_path: ../agent_development/agent_evaluation/notebooks/AgentEvaluation.py
+            notebook_path: ../agent_development/agent_evaluation/notebooks/AgentEvaluation.ipynb
             base_parameters:
               uc_catalog: ${var.uc_catalog}
               schema: ${var.schema}
