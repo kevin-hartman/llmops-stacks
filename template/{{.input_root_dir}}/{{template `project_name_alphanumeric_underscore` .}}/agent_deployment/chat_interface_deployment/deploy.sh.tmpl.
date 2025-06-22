@@ -1,5 +1,0 @@
-# BEFORE you deploy, make sure you have completed the following steps:
-# 1. Create the app by running ./create.sh
-# 2. Edit app.yaml and set the value of the SERVING_ENDPOINT environment variable. Set it to "databricks-meta-llama-3-3-70b-instruct" or similar
-# 3. Remember to run ./sync.sh before deploying
-databricks apps deploy dash-chatbot-app --source-code-path /Workspace/Users/vijay.balasubramaniam@databricks.com/databricks_apps/databricks-dash-chatbot/dash-chatbot-app

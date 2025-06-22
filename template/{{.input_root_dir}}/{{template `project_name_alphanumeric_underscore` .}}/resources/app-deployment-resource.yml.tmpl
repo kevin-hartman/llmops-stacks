@@ -13,6 +13,10 @@ resources:
           notebook_task:
             notebook_path: ../agent_deployment/chat_interface_deployment/LaunchApp.py
             base_parameters:
+              uc_catalog: ${var.uc_catalog}
+              schema: ${var.schema}
+              registered_model: ${var.registered_model}
+              app_name: ${var.chatbot_name}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
       schedule:

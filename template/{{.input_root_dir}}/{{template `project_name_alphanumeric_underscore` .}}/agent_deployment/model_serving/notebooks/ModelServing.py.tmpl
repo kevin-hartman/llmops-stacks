@@ -160,17 +160,15 @@ wait_for_model_serving_endpoint_to_be_ready(deployment_info.endpoint_name)
 
 # COMMAND ----------
 
-# To query the endpoint we can do
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+from mlflow.deployments import get_deploy_client
 
-w = WorkspaceClient()
-messages = []
-messages.append(ChatMessage(content="What is MLflow?", role=ChatMessageRole.USER))
-response = w.serving_endpoints.query(
-    name=deployment_info.endpoint_name,
-    messages=messages,
-    temperature=1.0,
-    stream=False,
-)
-print(response.choices[0].message.content)
+client = get_deploy_client()
+input_example = {
+    "messages": [{"role": "user", "content": "What is MLflow?"}],
+    "databricks_options": {"return_trace": True},
+}
+
+response = client.predict(endpoint=deployment_info.endpoint_name, inputs=input_example)
+
+print(response['messages'][-1]['content'])
+
