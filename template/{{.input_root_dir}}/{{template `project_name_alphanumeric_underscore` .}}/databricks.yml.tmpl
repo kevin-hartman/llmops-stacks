@@ -37,9 +37,8 @@ variables:
     description: "Vector Search index to populate."
     default: databricks_documentation_vs_index
   experiment:
-    # TODO: add your username or service-principal-id 
     description: "Experiment to log run under."
-    default: /Users/<user>/agent_function_chatbot
+    default: /Users/${workspace.current_user.userName}/agent_function_chatbot
   registered_model:
     description: "Name of agent model to register."
     default: agent_function_chatbot
@@ -81,7 +80,7 @@ targets:
       # TODO: add dev workspace URL
       host:
 
-  stage:
+  staging:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
 

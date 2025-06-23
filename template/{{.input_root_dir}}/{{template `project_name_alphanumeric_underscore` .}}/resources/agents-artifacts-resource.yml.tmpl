@@ -29,5 +29,5 @@ resources:
   apps:
     dash-chatbot-app:
       name: ${var.chatbot_name}
-      source_code_path: os.getcwd() # This assumes the app source code is at the root of the project.
+      source_code_path: /Users/${workspace.current_user.userName}/.bundle/my_agent_project/${bundle.target}/files/agent_deployment/chat_interface_deployment/
       description: 'your Databricks assistant app.'
