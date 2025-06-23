@@ -1,11 +1,11 @@
   # {{ .input_root_dir }}
 
 This directory contains an Agent project based on the default
-[Databricks AI Agent Ops Stacks](https://github.com/databricks/mlops-stacks),
-defining a production-grade Agent pipeline for automated data preparation, agent development, and deploymant of an AI model on tabular data.
+[Databricks AgentOps Stacks](https://github.com/databricks/mlops-stacks),
+defining a production-grade Agent pipeline for automated data preparation, agent development, and deploymant of a chatbot agent.
 The "Getting Started" docs can be found at {{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/bundles/mlops-stacks.html")) }}.
 
-See the full pipeline structure below. The [MLOps Stacks README](https://github.com/databricks/mlops-stacks/blob/main/Pipeline.md)
+See the full pipeline structure below. The [AgentOps Stacks README](https://github.com/databricks/mlops-stacks/blob/main/Pipeline.md)
 contains additional details on how Agent pipelines are tested and deployed across each of the dev, staging, prod environments below.
 
 
@@ -18,9 +18,9 @@ This project contains the following components:
 | Agent Code                    | Example Agent project code and notebooks                                                                                                                                                                                                                                                                             |
 | Agent Resources as Code | Agent pipeline resources (data preparation and development jobs with schedules, etc) configured and deployed through [databricks CLI bundles]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/bundle-cli.html")) }})                                                                                              |
 {{- end }}
-| CI/CD                      | {{ if (eq .input_cicd_platform `github_actions`) }}[GitHub Actions](https://github.com/actions) workflows  to test and deploy ML code and resources
-                               {{ else if (eq .input_cicd_platform `azure_devops`) }}[Azure DevOps Pipelines](https://learn.microsoft.com/en-us/azure/devops/pipelines) to test and deploy ML code and resources
-                               {{ else if (eq .input_cicd_platform `gitlab`) }}[Gitlab Pipelines](https://docs.gitlab.com/ee/ci/pipelines/) to test and deploy ML code and resources 
+| CI/CD                      | {{ if (eq .input_cicd_platform `github_actions`) }}[GitHub Actions](https://github.com/actions) workflows  to test and deploy code and resources
+                               {{ else if (eq .input_cicd_platform `azure_devops`) }}[Azure DevOps Pipelines](https://learn.microsoft.com/en-us/azure/devops/pipelines) to test and deploy code and resources
+                               {{ else if (eq .input_cicd_platform `gitlab`) }}[Gitlab Pipelines](https://docs.gitlab.com/ee/ci/pipelines/) to test and deploy code and resources 
                                {{ end }} |
 
 contained in the following files:
@@ -29,9 +29,9 @@ contained in the following files:
 {{ .input_root_dir }}        <- Root directory. Both monorepo and polyrepo are supported.
 │
 {{- if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}
-├── {{template `project_name_alphanumeric_underscore` .}}       <- Contains python code, notebooks and ML resources related to one ML project. 
+├── {{template `project_name_alphanumeric_underscore` .}}       <- Contains python code, notebooks and resources related to one project. 
 │   │
-│   ├── requirements.txt        <- Specifies Python dependencies for ML code (for example: model training, batch inference).
+│   ├── requirements.txt        <- Specifies Python dependencies for code.
 │   │
 │   ├── databricks.yml          <- databricks.yml is the root bundle file for the ML project that can be loaded by databricks CLI bundles. It defines the bundle name, workspace URL and resource config component to be included.
 │   │
@@ -67,15 +67,15 @@ contained in the following files:
 │       │
 │       ├── app-deployment-resource.yml                <- Agent resource config definition for launching the Databricks App frontend.
 │       │
-│       ├── ml-artifacts-resource.yml                  <- Agent resource config definition for model and experiment.
+│       ├── agents-artifacts-resource.yml                  <- Agent resource config definition for model and experiment.
 {{- end }}
 │
 {{- if or (eq .input_cicd_platform `github_actions`) (eq .input_cicd_platform `github_actions_for_github_enterprise_servers`) }}
-├── .github                     <- Configuration folder for CI/CD using GitHub Actions. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy ML resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .github                     <- Configuration folder for CI/CD using GitHub Actions. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
 {{- else if (eq .input_cicd_platform `azure_devops`) }}
-├── .azure                      <- Configuration folder for CI/CD using Azure DevOps Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy ML resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .azure                      <- Configuration folder for CI/CD using Azure DevOps Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
 {{- else if (eq .input_cicd_platform `gitlab`) }}
-├── .gitlab                      <- Configuration folder for CI/CD using Gitlab Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy ML resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .gitlab                      <- Configuration folder for CI/CD using Gitlab Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
 {{- end }}
 │
 ├── docs                        <- Contains documentation for the repo.
@@ -88,26 +88,23 @@ contained in the following files:
 The table below links to detailed docs explaining how to use this repo for different use cases.
 
 {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}
-This project comes with example Agent code to develop, evaluate and deploy an Agent that retrieves Databricks Documentation.
-If you're a data scientist just getting started with this repo for a brand new Agent project, we recommend 
-adapting the provided example code to your Agent problem. Then making and 
-testing Agent code changes on Databricks or your local machine. Follow the instructions from
-the [project README](./{{template `project_name_alphanumeric_underscore` .}}/README.md).
+This project comes with example Agent code to develop, evaluate and deploy a chatbot Agent that answers question regarding Databricks, retrieving relevant information from Databricks documentation.
+
+
+If you're a data scientist just getting started with this repo for a brand new Agent project, we recommend adapting the provided example code to your Agent problem. Then making and testing Agent code changes on Databricks or your local machine. Follow the instructions from the [project README](./{{template `project_name_alphanumeric_underscore` .}}/README.md).
 {{ end }} 
 
 When you're ready to deploy production training/inference
-pipelines, ask your ops team to follow the [MLOps setup guide](docs/mlops-setup.md) to configure CI/CD and deploy 
-production ML pipelines.
+pipelines, ask your ops team to follow the [MLOps setup guide](docs/agentops-setup.md) to configure CI/CD and deploy production pipelines.
 
-After that, follow the [ML pull request guide](docs/ml-pull-request.md)
-{{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} and [ML resource config guide]({{template `project_name_alphanumeric_underscore` .}}/resources/README.md) {{ end }} to propose, test, and deploy changes to production Agent code (e.g. update model parameters)
-or pipeline resources (e.g. use a larger instance type for model training) via pull request.
+After that, follow the [pull request guide](docs/pull-request.md)
+{{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} and [agent resource config guide]({{template `project_name_alphanumeric_underscore` .}}/resources/README.md) {{ end }} to propose, test, and deploy changes to production Agent code (e.g. update model parameters) or pipeline resources (e.g. use a larger instance type for model training) via pull request.
 
 | Role                          | Goal                                                                         | Docs                                                                                                                                                                |
 |-------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Data Scientist                | Get started writing Agent code for a brand new project                          | {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}[project README](./{{template `project_name_alphanumeric_underscore` .}}/README.md) {{ else }} README when project is initialized {{ end }}|
-| MLOps / DevOps                | Set up CI/CD for the current Agent project   | [MLOps setup guide](docs/mlops-setup.md)                                                                                                                            |
-| Data Scientist                | Update production Agent code (e.g. model training logic) for an existing project | [ML pull request guide](docs/ml-pull-request.md)                                                                                                                    |
+| AgentOps / DevOps                | Set up CI/CD for the current Agent project   | [AgentOps setup guide](docs/agentops-setup.md)                                                                                                                            |
+| Data Scientist                | Update production Agent code for an existing project | [pull request guide](docs/pull-request.md)                                                                                                                    |
 | Data Scientist                | Modify production model Agent resources, e.g. data preparation or agent development jobs  | {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}[Agent resource config guide]({{template `project_name_alphanumeric_underscore` .}}/resources/README.md) {{ else }} Agent resources README when project is initialized {{ end }} |
 
 ## Setting up CI/CD
@@ -120,12 +117,11 @@ This stack comes with a workflow to set up CI/CD for projects that can be found 
 `.gitlab/pipelines/{{.input_project_name}}-triggers-cicd.yml`.
 {{ end }}
 
-To set up CI/CD for projects that were created through AI Agent Ops Stacks with the `Project_Only` parameter, 
-run the above mentioned workflow, specifying the `project_name` as a parameter. For example, for the monorepo case:
+To set up CI/CD for projects that were created through AgentOps Stacks with the `Project_Only` parameter, run the above mentioned workflow, specifying the `project_name` as a parameter. For example, for the monorepo case:
 
-1. Setup your repository by initializing AI Agent Ops Stacks via Databricks CLI with the `CICD_and_Project` or `CICD_Only` parameter.
-2. Follow the [MLOps Setup Guide](./docs/mlops-setup.md) to setup authentication and get the repo ready for CI/CD.
-3. Create a new project by initializing AI Agent Ops Stacks again but this time with the `Project_Only` parameter.
+1. Setup your repository by initializing Agent Ops Stacks via Databricks CLI with the `CICD_and_Project` or `CICD_Only` parameter.
+2. Follow the [AgentOps Setup Guide](./docs/agentops-setup.md) to setup authentication and get the repo ready for CI/CD.
+3. Create a new project by initializing AgentOps Stacks again but this time with the `Project_Only` parameter.
 4. Run the `deploy-cicd.yml` workflow with the `project_name` parameter set to the name of the project you want to set up CI/CD for.
 
 {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}

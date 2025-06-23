@@ -14,48 +14,53 @@
 ## Intro
 
 ### databricks CLI bundles
-AI Agent Ops Stacks resources are configured and deployed through [databricks CLI bundles]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/bundle-cli.html")) }}).
+AgentOps Stacks resources are configured and deployed through [databricks CLI bundles]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/bundle-cli.html")) }}).
 The bundle setting file must be expressed in YAML format and must contain at minimum the top-level bundle mapping.
 
 The databricks CLI bundles top level is defined by file `{{template `project_name_alphanumeric_underscore` .}}/databricks.yml`.
 During databricks CLI bundles deployment, the root config file will be loaded, validated and deployed to workspace provided by the environment together with all the included resources.
 
-ML Resource Configurations in this directory:
+Agent Resource Configurations in this directory:
  - data preparation workflow (`{{template `project_name_alphanumeric_underscore` .}}/resources/data-preparation-resource.yml`)
  - agent development and deployment workflow (`{{template `project_name_alphanumeric_underscore` .}}/resources/agent-resource.yml`)
  - app deployment workflow (`{{template `project_name_alphanumeric_underscore` .}}/resources/app-deployment-resource.yml`)
- - model definition and experiment definition (`{{template `project_name_alphanumeric_underscore` .}}/resources/ml-artifacts-resource.yml`)
+ - model definition, experiment, and app definition (`{{template `project_name_alphanumeric_underscore` .}}/resources/agents-artifacts-resource.yml`)
 
 
 ### Deployment Config & CI/CD integration
-The ML resources can be deployed to databricks workspace based on the databricks CLI bundles deployment config.
-Deployment configs of different deployment targets share the general ML resource configurations with added ability to specify deployment target specific values (workspace URI, model name, jobs notebook parameters, etc).
+The agent resources can be deployed to databricks workspace based on the databricks CLI bundles deployment config. Deployment configs of different deployment targets share the general agent resource configurations with added ability to specify deployment target specific values (workspace URI, model name, jobs notebook parameters, etc).
 
 {{- if (eq .input_setup_cicd_and_project `Project_Only`) }}
 
-NOTE: This project was not setup with CI/CD workflows. You can setup CI/CD with a new initialization of MLOps Stacks. The rest of this section only applies if you are using a monorepo setup with CI/CD previously or have setup CI/CD otherwise.
+NOTE: This project was not setup with CI/CD workflows. You can setup CI/CD with a new initialization of AgentOps Stacks. The rest of this section only applies if you are using a monorepo setup with CI/CD previously or have setup CI/CD otherwise.
 {{- else }}
-This project ships with CI/CD workflows for developing and deploying ML resource configurations based on deployment config.
+This project ships with CI/CD workflows for developing and deploying agent resource configurations based on deployment config.
 {{- end }}
 
-For Model Registry in Unity Catalog, we expect a catalog to exist with the name of the deployment target by default. For example, if the deployment target is `dev`, we expect a catalog named `dev` to exist in the workspace. 
-If you want to use different catalog names, please update the `targets` declared in the `{{template `project_name_alphanumeric_underscore` .}}/databricks.yml` and `{{template `project_name_alphanumeric_underscore` .}}/resources/ml-artifacts-resource.yml` files.
-If changing the `staging`, `prod`, or `test` deployment targets, you'll need to update the 
-{{- if (eq .input_setup_cicd_and_project `Project_Only`) }} workflows located in the root directory if in a monorepo setup with CI/CD. Otherwise you can setup CI/CD with a new initialization of MLOps Stacks.
-{{- else if or (eq .input_cicd_platform `github_actions`) (eq .input_cicd_platform `github_actions_for_github_enterprise_servers`) }} workflows located in the `.github/workflows` directory.
-{{- else if (eq .input_cicd_platform `azure_devops`) }}  pipelines located in the `azure-pipelines` directory.
-{{- else if (eq .input_cicd_platform `gitlab`) }}  pipelines located in the `gitlab` directory.{{- end }}
+When you initialize the stack, we set the catalog name in the `{{template `project_name_alphanumeric_underscore` .}}/databricks.yml`, so we expect a catalog of the same name in each environment. I
 
-| Deployment Target | Description                                                                                                                                                                                                                           | Databricks Workspace | Model Name                          | Experiment Name                                |
-|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-------------------------------------|------------------------------------------------|
-| dev         | The `dev` deployment target is used by ML engineers to deploy ML resources to development workspace with `dev` configs. The config is for ML project development purposes.                                                           | dev workspace        | dev-{{template `model_name` .}}     | /dev-{{template `experiment_base_name` .}}     |
+If you want to use different catalog names, please set the variable `uc_catalog` under each target environment: 
+
+```
+targets:
+  dev:
+    variables:
+      uc_catalog: 
+        description: Unity Catalog used to store data and artifacts.
+        default: <insert-different-catalog-name>
+
+```
+
+| Deployment Target | Description                                                                                                                                                                                                                           | Databricks Workspace |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
+| dev         | The `dev` deployment target is used to deploy resources to development workspace with `dev` configs. The config is for project development purposes.                                                           | dev workspace        | dev-{{template `model_name` .}}     | /dev-{{template `experiment_base_name` .}}     |
 | staging     | The `staging` deployment target is part of the CD pipeline. Latest {{ .input_default_branch }} content will be deployed to staging workspace with `staging` config.                                                             | staging workspace    | staging-{{template `model_name` .}} | /staging-{{template `experiment_base_name` .}} |
 | prod        | The `prod` deployment target is part of the CD pipeline. Latest {{ .input_release_branch }} content will be deployed to prod workspace with `prod` config.                                                                      | prod workspace       | prod-{{template `model_name` .}}    | /prod-{{template `experiment_base_name` .}}    |
-| test        | The `test` deployment target is part of the CI pipeline. For changes targeting the {{ .input_default_branch }} branch, upon making a PR, an integration test will be triggered and ML resources deployed to the staging workspace defined under `test` deployment target. | staging workspace    | test-{{template `model_name` .}}    | /test-{{template `experiment_base_name` .}}    |
+| test        | The `test` deployment target is part of the CI pipeline. For changes targeting the {{ .input_default_branch }} branch, upon making a PR, an integration test will be triggered and agent resources deployed to the staging workspace defined under `test` deployment target. | staging workspace    | test-{{template `model_name` .}}    | /test-{{template `experiment_base_name` .}}    |
 
-During ML code development, you can deploy local ML resource configurations together with ML code to the a Databricks workspace to run the training, model validation or batch inference pipelines. The deployment will use `dev` config by default.
+During code development, you can deploy local resource configurations together with code to the Databricks workspace to run the ingestion, development, or deployment pipelines. The deployment will use `dev` config by default.
 
-You can open a PR (pull request) to modify ML code or the resource config against {{ .input_default_branch }} branch.
+You can open a PR (pull request) to modify code or the resource config against {{ .input_default_branch }} branch.
 The PR will trigger Python unit tests, followed by an integration test executed on the staging workspace, as defined under the `test` environment resource. 
 
 Upon merging a PR to the {{ .input_default_branch }} branch, the {{ .input_default_branch }} branch content will be deployed to the staging workspace with `staging` environment resource configurations.
@@ -73,34 +78,43 @@ To set up the databricks CLI using a Databricks personal access token, take the 
 3. [Create a personal access token]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/auth/pat.html")) }})
   in your dev workspace and copy it.
 4. Set an env variable `DATABRICKS_TOKEN` with your Databricks personal access token in your terminal. For example, run `export DATABRICKS_TOKEN=dapi12345` if the access token is dapi12345.
-5. You can now use the databricks CLI to validate and deploy ML resource configurations to the dev workspace.
+5. You can now use the databricks CLI to validate and deploy resource configurations to the dev workspace.
 
 Alternatively, you can use the other approaches described in the [databricks CLI]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/databricks-cli.html")) }}) documentation to set up authentication. For example, using your Databricks username/password, or seting up a local profile.
 
-### Validate and provision ML resource configurations
+### Validate and provision agent resource configurations
 1. After installing the databricks CLI and creating the `DATABRICKS_TOKEN` env variable, change to the `{{template `project_name_alphanumeric_underscore` .}}` directory.
 2. Run `databricks bundle validate` to validate the Databricks resource configurations. 
-3. Run `databricks bundle deploy` to provision the Databricks resource configurations to the dev workspace. The resource configurations and your ML code will be copied together to the dev workspace. The defined resources such as Databricks Workflows, MLflow Model and MLflow Experiment will be provisioned according to the config files under `{{template `project_name_alphanumeric_underscore` .}}/resources`.
+3. Run `databricks bundle deploy` to provision the Databricks resource configurations to the dev workspace. The resource configurations and your code will be copied together to the dev workspace. The defined resources such as Databricks Workflows, Registered Model and MLflow Experiment will be provisioned according to the config files under `{{template `project_name_alphanumeric_underscore` .}}/resources`.
 4. Go to the Databricks dev workspace, check the defined model, experiment and workflows status, and interact with the created workflows.
 
-### Destroy ML resource configurations
-After development is done, you can run `databricks bundle destroy` to destroy (remove) the defined Databricks resources in the dev workspace. Any model version with `Production` or `Staging` stage will prevent the model from being deleted. Please update the version stage to `None` or `Archived` before destroying the ML resources.
+### Destroy resource configurations
+After development is done, you can run `databricks bundle destroy` to destroy (remove) the defined Databricks resources in the dev workspace. 
+
+Any model version will prevent the model from being deleted. Please update the version stage to `None` or `Archived` before destroying the ML resources.
+
+In addition, currently, there are a number of assets not managed by the bundle that cannot be deleted by the `destroy` command, including: 
+
+- Agent deployment. Additionally, assets created by the deployment (the Feedback registered model, the CPU endpoint for the agent and feedback model, and the payload table). 
+- Data assets, including the volume with Databricks documentation and the three Delta tables. 
+- Vector Search assets (the endpoint and index). 
+- UC Functions.
 
 {{- if (eq .input_setup_cicd_and_project `CICD_and_Project`) }}
 ## Set up CI/CD
-Please refer to [mlops-setup](../../docs/mlops-setup.md#configure-cicd) for instructions to set up CI/CD.
+Please refer to [agentops-setup](../../docs/agentops-setup.md#configure-cicd) for instructions to set up CI/CD.
 
-## Deploy initial ML resources
+## Deploy initial agent resources
 After completing the prerequisites, create and push a PR branch adding all files to the Git repo:
 ```
-git checkout -b add-ml-resource-config-and-code
+git checkout -b add-agent-resource-config-and-code
 git add .
-git commit -m "Add ML resource config and ML code"
-git push upstream add-ml-resource-config-and-code
+git commit -m "Add Agent resource config and ML code"
+git push upstream add-agent-resource-config-and-code
 ```
 Open a pull request to merge the pushed branch into the `{{ .input_default_branch }}` branch.
 Upon creating this PR, the CI workflows will be triggered.
-These CI workflow will run unit and integration tests of the ML code, 
+These CI workflow will run unit and integration tests of the agent code, 
 in addition to validating the Databricks resources to be deployed to both staging and prod workspaces.
 Once CI passes, merge the PR into the `{{ .input_default_branch }}` branch. This will deploy an initial set of Databricks resources to the staging workspace.
 resources will be deployed to the prod workspace on pushing code to the `{{ .input_release_branch }}` branch.
@@ -109,7 +123,7 @@ resources will be deployed to the prod workspace on pushing code to the `{{ .inp
 ## Develop and test config changes
 
 ### databricks CLI bundles schema overview
-To get started, open `{{template `project_name_alphanumeric_underscore` .}}/resources/batch-inference-workflow-resource.yml`.  The file contains the ML resource definition of a data ingestion job, like:
+To get started, open `{{template `project_name_alphanumeric_underscore` .}}/resources/batch-inference-workflow-resource.yml`.  The file contains the agent resource definition of a data ingestion job, like:
 
 ```$xslt
 resources:
@@ -138,7 +152,7 @@ As this is running on serverless, there is no need for cluster definitions. If y
 
 We specify a `data_preprocessing_job` under `resources/jobs` to define a databricks workflow with internal key `data_preprocessing_job` and job name `{bundle.target}-{{ .input_project_name }}-data-preprocessing-job`.
 The workflow contains a single task with task key `data_preprocessing_job`. The task runs notebook `{{template `project_name_alphanumeric_underscore` .}}/data_preparation/data_ingestion/notebooks/DataIngestion.py` with provided parameters `uc_catalog`, `schema`, `raw_data_table`, and `data_source_url` passing to the notebook.
-After setting up databricks CLI, you can run command `databricks bundle schema`  to learn more about databricks CLI bundles schema.
+After setting up databricks CLI, you can run command `databricks bundle schema` to learn more about databricks CLI bundles schema.
 
 The notebook_path is the relative path starting from the resource yaml file.
 
@@ -202,7 +216,7 @@ Please refer to [Local development and dev workspace](#local-development-and-dev
 
 ### Test workspace deployment(CI)
 After setting up CI/CD, PRs against the {{ .input_default_branch }} branch will trigger CI workflows to run unit tests, integration test and resource validation.
-The integration test will deploy MLflow model, MLflow experiment and Databricks workflow resources defined under the `test` environment resource config to the staging workspace. The integration test then triggers a run of the model workflow to verify the ML code. 
+The integration test will deploy MLflow model, MLflow experiment and Databricks workflow resources defined under the `test` environment resource config to the staging workspace. The integration test then triggers a run of the workflows to verify the code. 
 
 ### Staging and Prod workspace deployment(CD)
 After merging a PR to the {{ .input_default_branch }} branch, continuous deployment automation will deploy the `staging` resources to the staging workspace.
