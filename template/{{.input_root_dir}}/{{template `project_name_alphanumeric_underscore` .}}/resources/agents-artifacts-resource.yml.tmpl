@@ -25,3 +25,9 @@ resources:
     experiment:
       name: ${var.experiment}
       <<: *permissions
+
+  apps:
+    dash-chatbot-app:
+      name: ${var.chatbot_name}
+      source_code_path: os.getcwd() # This assumes the app source code is at the root of the project.
+      description: 'your Databricks assistant app.'
