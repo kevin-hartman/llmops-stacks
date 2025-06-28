@@ -1,20 +1,20 @@
-# Databricks MLOps Stacks
+# Databricks AgentOps Stacks
 
 > **_NOTE:_**  This feature is in [public preview](https://docs.databricks.com/release-notes/release-types.html).
 
-This repo provides a customizable stack for starting new ML projects
+This repo provides a customizable stack for starting new AI Agent projects
 on Databricks that follow production best-practices out of the box.
 
-Using Databricks MLOps Stacks, data scientists can quickly get started iterating on ML code for new projects while ops engineers set up CI/CD and ML resources
-management, with an easy transition to production. You can also use MLOps Stacks as a building block in automation for creating new data science projects with production-grade CI/CD pre-configured. More information can be found at https://docs.databricks.com/en/dev-tools/bundles/mlops-stacks.html.
+Using Databricks AgentOps Stacks, data scientists can quickly get started iterating on agent code for new projects while ops engineers set up CI/CD and resources
+management, with an easy transition to production. You can also use AgentOps Stacks as a building block in automation for creating new data science projects with production-grade CI/CD pre-configured.
 
 The default stack in this repo includes three modular components: 
 
 | Component                   | Description                                                                                                                                                           | Why it's useful                                                                                                                                                                         |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [ML Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/)                     | Example Agent project structure ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/data_preparation) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/deployment/agent_development), etc), with unit tested Python modules and notebooks                                                                                           | Quickly iterate on Agent problems, without worrying about refactoring your code into tested modules for productionization later on.                                                        |
+| [Agent Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/)                     | Example Agent project structure ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/data_preparation) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/deployment/agent_development), etc), with unit tested Python modules and notebooks                                                                                           | Quickly iterate on Agent problems, without worrying about refactoring your code into tested modules for productionization later on.                                                        |
 | [Agent Resources as Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources) | Agent pipeline resources ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/data-preparation-resource.yml.tmpl) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/agent_resource.yml.tmpl) jobs, etc) defined through [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-cli.html)    | Govern, audit, and deploy changes to your Agent resources (e.g. "use a larger instance type for automated model retraining") through pull requests, rather than adhoc changes made via UI. |
-| CI/CD([GitHub Actions](template/{{.input_root_dir}}/.github/) or [Azure DevOps](template/{{.input_root_dir}}/.azure/))                       | [GitHub Actions](https://docs.github.com/en/actions) or [Azure DevOps](https://azure.microsoft.com/en-us/products/devops) workflows to test and deploy ML code and resources | Ship ML code faster and with confidence: ensure all production changes are performed through automation and that only tested code is deployed to prod                                   |
+| CI/CD ([GitHub Actions](template/{{.input_root_dir}}/.github/) or [Azure DevOps](template/{{.input_root_dir}}/.azure/))                       | [GitHub Actions](https://docs.github.com/en/actions) or [Azure DevOps](https://azure.microsoft.com/en-us/products/devops) workflows to test and deploy code and resources | Ship code faster and with confidence: ensure all production changes are performed through automation and that only tested code is deployed to prod                                   |
 
 See the [FAQ](#FAQ) for questions on common use cases.
 
@@ -31,7 +31,7 @@ Data scientists can iterate on Agent code and file pull requests (PRs). This wil
 
 ### Prerequisites
  - Python 3.8+
- - [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) >= v0.236.0
+ - [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) >= v0.256.0
 
 [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) contains [Databricks asset bundle templates](https://docs.databricks.com/en/dev-tools/bundles/templates.html) for the purpose of project creation.
 
@@ -44,7 +44,7 @@ Please follow [the instruction](https://docs.databricks.com/en/dev-tools/cli/dat
 
 To create a new project, run:
 
-    databricks bundle init ai-agent-ops-stacks
+    databricks bundle init agentops-stacks
 
 This will prompt for parameters for initialization. Some of these parameters are required to get started:
  * ``input_setup_cicd_and_project`` : If both CI/CD and the project should be set up, or only one of them. 
@@ -58,14 +58,13 @@ This will prompt for parameters for initialization. Some of these parameters are
 
 Others must be correctly specified for CI/CD to work:
  * ``input_cicd_platform`` : CI/CD platform of choice. Currently we support GitHub Actions, GitHub Actions for GitHub Enterprise Servers, Azure DevOps and GitLab.
- * ``input_databricks_staging_workspace_host``: URL of staging Databricks workspace, used to preview config changes before they're deployed to production.  
- We encourage granting data scientists working on the current ML project non-admin (read) access to this workspace,
+ * ``input_databricks_staging_workspace_host``: URL of staging Databricks workspace, used to preview config changes before they're deployed to production. We encourage granting data scientists working on the current ML project non-admin (read) access to this workspace,
    to enable them to view and debug CI test results
  * ``input_databricks_prod_workspace_host``: URL of production Databricks workspace. We encourage granting data scientists working on the current ML project non-admin (read) access to this workspace,
    to enable them to view production job status and see job logs to debug failures.
- * ``input_default_branch``: Name of the default branch, where the prod and staging ML resources are deployed from and the latest ML code is staged.
+ * ``input_default_branch``: Name of the default branch, where the prod and staging resources are deployed from and the latest code is staged.
  * ``input_release_branch``: Name of the release branch. The production jobs (model training, batch inference) defined in this
-    repo pull ML code from this branch.
+    repo pull code from this branch.
 
 Or used for project initialization:
  * ``input_project_name``: name of the current project
@@ -75,14 +74,14 @@ Or used for project initialization:
 
 See the generated ``README.md`` for next steps!
 
-## Customize AI Agent Ops Stacks
+## Customize AgentOps Stacks
 Your organization can use the default stack as is or customize it as needed, e.g. to add/remove components or
 adapt individual components to fit your organization's best practices. See the
 [stack customization guide](stack-customization.md) for more details.
 
 ## FAQ
 
-### Do I need separate dev/staging/prod workspaces to use AI Agent Ops Stacks?
+### Do I need separate dev/staging/prod workspaces to use AgentOps Stacks?
 We recommend using separate dev/staging/prod Databricks workspaces for stronger
 isolation between environments. For example, Databricks REST API rate limits
 are applied per-workspace, so if using [Databricks Model Serving](https://docs.databricks.com/applications/mlflow/model-serving.html),
@@ -97,30 +96,28 @@ to ensure that CI workloads run in staging cannot interfere with production reso
 
 ### I have an existing Agent project. Can I productionize it using AI Agent Ops Stacks?
 Yes. Currently, you can instantiate a new project and copy relevant components
-into your existing project to productionize it. MLOps Stacks is modularized, so
+into your existing project to productionize it. AgentOps Stacks is modularized, so
 you can e.g. copy just the GitHub Actions workflows under `.github` or ML resource configs
  under ``{{.input_root_dir}}/{{template `project_name_alphanumeric_underscore` .}}/resources`` 
 and ``{{.input_root_dir}}/{{template `project_name_alphanumeric_underscore` .}}/databricks.yml`` into your existing project.
 
 ### Can I adopt individual components of AI Agent Ops Stacks?
 For this use case, we recommend instantiating via [Databricks asset bundle templates](https://docs.databricks.com/en/dev-tools/bundles/templates.html) 
-and copying the relevant subdirectories. For example, all ML resource configs
+and copying the relevant subdirectories. For example, all agent resource configs
 are defined under ``{{.input_root_dir}}/{{template `project_name_alphanumeric_underscore` .}}/resources``
 and ``{{.input_root_dir}}/{{template `project_name_alphanumeric_underscore` .}}/databricks.yml``, while CI/CD is defined e.g. under `.github`
 if using GitHub Actions, or under `.azure` if using Azure DevOps.
 
-### Can I customize my AI Agent Ops Stack?
-Yes. We provide the default stack in this repo as a production-friendly starting point for MLOps.
+### Can I customize my Agent Ops Stack?
+Yes. We provide the default stack in this repo as a production-friendly starting point for AgentOps.
 However, in many cases you may need to customize the stack to match your organization's
 best practices. See [the stack customization guide](stack-customization.md)
 for details on how to do this.
 
-### Does the AI Agent Ops Stacks cover data (ETL) pipelines?
+### Does the AgentOps Stacks cover data (ETL) pipelines?
 
-Since AI Agent Ops Stacks is based on [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-commands.html),
-it's not limited only to Agent workflows and resources - it works for resources across the Databricks Lakehouse. For instance, while the existing Agent
-code samples contain feature engineering, training, model validation, deployment and batch inference workflows,
-you can use it for Delta Live Tables pipelines as well.
+Since AgentOps Stacks is based on [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-commands.html),
+it's not limited only to Agent workflows and resources - it works for resources across the Databricks Lakehouse. For instance, while the existing Agent code samples contain data ingestion, agent development, and agent deployment workflows, you can use it for Delta Live Tables pipelines as well.
 
 ### How can I provide feedback?
 
@@ -131,7 +128,7 @@ Please provide feedback (bug reports, feature requests, etc) via GitHub issues.
 We welcome community contributions. For substantial changes, we ask that you first file a GitHub issue to facilitate
 discussion, before opening a pull request.
 
-AI Agent Ops Stacks is implemented as a [Databricks asset bundle template](https://docs.databricks.com/en/dev-tools/bundles/templates.html)
+AgentOps Stacks is implemented as a [Databricks asset bundle template](https://docs.databricks.com/en/dev-tools/bundles/templates.html)
 that generates new projects given user-supplied parameters. Parametrized project code can be found under
 the `{{.input_root_dir}}` directory.
 
@@ -166,34 +163,4 @@ Run integration tests only:
 
 ```
 pytest tests --large-only
-```
-
-### Previewing changes
-When making changes to AI Agent Ops Stacks, it can be convenient to see how those changes affect
-a generated new Agent project. To do this, you can create an example
-project from your local checkout of the repo, and inspect its contents/run tests within
-the project.
-
-We provide example project configs for Azure (using both GitHub and Azure DevOps), AWS (using GitHub), and GCP (using GitHub) under `tests/example-project-configs`.
-To create an example Azure project, using Azure DevOps as the CI/CD platform, run the following from the desired parent directory
-of the example project:
-
-```
-# Note: update MLOPS_STACKS_PATH to the path to your local checkout of the MLOps Stacks repo
-MLOPS_STACKS_PATH=~/mlops-stacks
-databricks bundle init "$MLOPS_STACKS_PATH" --config-file "$MLOPS_STACKS_PATH/tests/example-project-configs/azure/azure-devops.json"
-```
-
-To create an example AWS project, using GitHub Actions for CI/CD, run:
-```
-# Note: update MLOPS_STACKS_PATH to the path to your local checkout of the MLOps Stacks repo
-MLOPS_STACKS_PATH=~/mlops-stacks
-databricks bundle init "$MLOPS_STACKS_PATH" --config-file "$MLOPS_STACKS_PATH/tests/example-project-configs/aws/aws-github.json"
-```
-
-To create an example GCP project, using GitHub Actions for CI/CD, run:
-```
-# Note: update MLOPS_STACKS_PATH to the path to your local checkout of the MLOps Stacks repo
-MLOPS_STACKS_PATH=~/mlops-stacks
-databricks bundle init "$MLOPS_STACKS_PATH" --config-file "$MLOPS_STACKS_PATH/tests/example-project-configs/gcp/gcp-github.json"
 ```
