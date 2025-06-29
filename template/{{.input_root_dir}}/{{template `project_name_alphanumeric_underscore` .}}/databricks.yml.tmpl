@@ -51,9 +51,9 @@ variables:
   eval_table:
     description: "Table in Unity Catalog to store evaluation data."
     default: "databricks_documentation_eval"
-  model_version:
-    description: "Version of model to evaluate."
-    default: 1
+  model_alias:
+    description: "Model alias to use for trained model"
+    default: agent_latest
   scale_to_zero:
     description: "Scale model endpoint to zero when not in use."
     default: True
