@@ -20,6 +20,13 @@ resources:
         schema_name: ${var.schema}
         comment: Registered model in Unity Catalog for the "mlops-example-project" ML Project for ${bundle.target} deployment target.
         <<: *grants
+      
+      feedback_model: 
+        name: feedback
+        catalog_name: ${var.uc_catalog}
+        schema_name: ${var.schema}
+        comment: Registered model for the agent's feedback for ${bundle.target} deployment target.
+        <<: *grants
 
   experiments:
     experiment:
@@ -29,5 +36,5 @@ resources:
   apps:
     dash-chatbot-app:
       name: ${var.chatbot_name}
-      source_code_path: os.getcwd() # This assumes the app source code is at the root of the project.
+      source_code_path: /Users/${workspace.current_user.userName}/.bundle/my_agent_project/${bundle.target}/files/agent_deployment/chat_interface_deployment/
       description: 'your Databricks assistant app.'

@@ -37,9 +37,8 @@ variables:
     description: "Vector Search index to populate."
     default: databricks_documentation_vs_index
   experiment:
-    # TODO: add your username or service-principal-id 
     description: "Experiment to log run under."
-    default: /Users/<user>/agent_function_chatbot
+    default: /Users/${workspace.current_user.userName}/agent_function_chatbot
   registered_model:
     description: "Name of agent model to register."
     default: agent_function_chatbot
@@ -52,9 +51,9 @@ variables:
   eval_table:
     description: "Table in Unity Catalog to store evaluation data."
     default: "databricks_documentation_eval"
-  model_version:
-    description: "Version of model to evaluate."
-    default: 1
+  model_alias:
+    description: "Model alias to use for trained model"
+    default: agent_latest
   scale_to_zero:
     description: "Scale model endpoint to zero when not in use."
     default: True
@@ -75,13 +74,13 @@ include:
 
 # Deployment Target specific values for workspace
 targets:
-  dev: # UC Catalog Name
+  dev:
     default: true
     workspace:
       # TODO: add dev workspace URL
       host:
 
-  stage:
+  staging:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
 
