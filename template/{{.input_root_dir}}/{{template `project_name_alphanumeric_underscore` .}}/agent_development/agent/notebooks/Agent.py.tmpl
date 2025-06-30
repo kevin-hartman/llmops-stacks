@@ -229,10 +229,26 @@ mlflow.langchain.autolog()
 # COMMAND ----------
 
 # DBTITLE 1,Use the tools in Langgraph
-from typing import Literal
-from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode
-from databricks_langchain import ChatDatabricks
+from typing import Any, Generator, Optional, Sequence, Union, Literal
+import mlflow
+from databricks_langchain import (
+    ChatDatabricks,
+    UCFunctionToolkit,
+    VectorSearchRetrieverTool,
+)
+from langchain_core.language_models import LanguageModelLike
+from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langchain_core.tools import BaseTool, tool
+from langgraph.graph import START, END, StateGraph
+from langgraph.prebuilt.tool_node import ToolNode
+from mlflow.langchain.chat_agent_langgraph import ChatAgentState, ChatAgentToolNode
+from mlflow.pyfunc import ChatAgent
+from mlflow.types.agent import (
+    ChatAgentChunk,
+    ChatAgentMessage,
+    ChatAgentResponse,
+    ChatContext,
+)
 
 tools = uc_tools + [retrieve_function]
 
@@ -327,18 +343,27 @@ final_state["messages"][-1].content
 # COMMAND ----------
 
 # DBTITLE 1,Log the model using MLflow
-# MAGIC %%writefile app.py
-# MAGIC from mlflow.models import set_model
-# MAGIC from unitycatalog.ai.core.base import set_uc_function_client
-# MAGIC from unitycatalog.ai.core.databricks import DatabricksFunctionClient
-# MAGIC from langgraph.prebuilt import ToolNode
-# MAGIC from langgraph.checkpoint.memory import MemorySaver
-# MAGIC from langgraph.graph import END, START, StateGraph, MessagesState
-# MAGIC from typing import Annotated, Literal, TypedDict
-# MAGIC from unitycatalog.ai.langchain.toolkit import UCFunctionToolkit
-# MAGIC from databricks_langchain import ChatDatabricks, VectorSearchRetrieverTool
-# MAGIC from langchain_core.tools import tool
-# MAGIC import os
+# MAGIC %%writefile ../notebooks/app.py
+# MAGIC from typing import Any, Generator, Optional, Sequence, Union, Literal
+# MAGIC import mlflow
+# MAGIC from databricks_langchain import (
+# MAGIC     ChatDatabricks,
+# MAGIC     UCFunctionToolkit,
+# MAGIC     VectorSearchRetrieverTool,
+# MAGIC )
+# MAGIC from langchain_core.language_models import LanguageModelLike
+# MAGIC from langchain_core.runnables import RunnableConfig, RunnableLambda
+# MAGIC from langchain_core.tools import BaseTool, tool
+# MAGIC from langgraph.graph import START, END, StateGraph
+# MAGIC from langgraph.prebuilt.tool_node import ToolNode
+# MAGIC from mlflow.langchain.chat_agent_langgraph import ChatAgentState, ChatAgentToolNode
+# MAGIC from mlflow.pyfunc import ChatAgent
+# MAGIC from mlflow.types.agent import (
+# MAGIC     ChatAgentChunk,
+# MAGIC     ChatAgentMessage,
+# MAGIC     ChatAgentResponse,
+# MAGIC     ChatContext,
+# MAGIC )
 # MAGIC
 # MAGIC uc_catalog = "{{.input_catalog_name}}"
 # MAGIC schema = "{{.input_schema_name}}"
@@ -408,8 +433,56 @@ final_state["messages"][-1].content
 # MAGIC workflow.add_conditional_edges("agent", should_continue)
 # MAGIC workflow.add_edge("tools", 'agent')
 # MAGIC
-# MAGIC app = workflow.compile()
-# MAGIC set_model(app)
+# MAGIC     workflow = StateGraph(ChatAgentState)
+# MAGIC
+# MAGIC     tool_node = ChatAgentToolNode(tools)
+# MAGIC     workflow.add_node("agent", RunnableLambda(call_model))
+# MAGIC     workflow.add_node("tools", tool_node)
+# MAGIC     workflow.add_edge(START, "agent")
+# MAGIC     workflow.add_conditional_edges("agent", should_continue)
+# MAGIC     workflow.add_edge("tools", "agent")
+# MAGIC     return workflow.compile()
+# MAGIC
+# MAGIC class LangGraphChatAgent(ChatAgent):
+# MAGIC     def __init__(self, agent):
+# MAGIC         self.agent = agent
+# MAGIC
+# MAGIC     def predict(
+# MAGIC         self,
+# MAGIC         messages: list[ChatAgentMessage],
+# MAGIC         context: Optional[ChatContext] = None,
+# MAGIC         custom_inputs: Optional[dict[str, Any]] = None,
+# MAGIC     ) -> ChatAgentResponse:
+# MAGIC         request = {"messages": self._convert_messages_to_dict(messages)}
+# MAGIC
+# MAGIC         messages = []
+# MAGIC         for event in self.agent.stream(request, stream_mode="updates"):
+# MAGIC             for node_data in event.values():
+# MAGIC                 messages.extend(
+# MAGIC                     ChatAgentMessage(**msg) for msg in node_data.get("messages", [])
+# MAGIC                 )
+# MAGIC         return ChatAgentResponse(messages=messages)
+# MAGIC
+# MAGIC     def predict_stream(
+# MAGIC         self,
+# MAGIC         messages: list[ChatAgentMessage],
+# MAGIC         context: Optional[ChatContext] = None,
+# MAGIC         custom_inputs: Optional[dict[str, Any]] = None,
+# MAGIC     ) -> Generator[ChatAgentChunk, None, None]:
+# MAGIC         request = {"messages": self._convert_messages_to_dict(messages)}
+# MAGIC         for event in self.agent.stream(request, stream_mode="updates"):
+# MAGIC             for node_data in event.values():
+# MAGIC                 yield from (
+# MAGIC                     ChatAgentChunk(**{"delta": msg}) for msg in node_data["messages"]
+# MAGIC                 )
+# MAGIC
+# MAGIC
+# MAGIC # Create the agent object, and specify it as the agent object to use when
+# MAGIC # loading the agent back for inference via mlflow.models.set_model()
+# MAGIC mlflow.langchain.autolog()
+# MAGIC agent = create_tool_calling_agent(model, tools, system_prompt)
+# MAGIC AGENT = LangGraphChatAgent(agent)
+# MAGIC mlflow.models.set_model(AGENT)
 
 # COMMAND ----------
 
