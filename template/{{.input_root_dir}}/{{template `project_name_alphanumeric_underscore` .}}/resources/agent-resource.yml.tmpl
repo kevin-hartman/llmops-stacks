@@ -21,6 +21,7 @@ resources:
               registered_model: ${var.registered_model}
               agent_model_endpoint: ${var.agent_model_endpoint}
               max_words: ${var.max_words}
+              model_alias: ${var.model_alias}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
 
@@ -34,7 +35,7 @@ resources:
               schema: ${var.schema}
               registered_model: ${var.registered_model}
               eval_table: ${var.eval_table}
-              model_version: ${var.model_version}
+              model_alias: ${var.model_alias}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
 
@@ -47,7 +48,7 @@ resources:
               uc_catalog: ${var.uc_catalog}
               schema: ${var.schema}
               registered_model: ${var.registered_model}
-              model_version: ${var.model_version}
+              model_alias: ${var.model_alias}
               scale_to_zero: ${var.scale_to_zero}
               workload_size: ${var.workload_size}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run

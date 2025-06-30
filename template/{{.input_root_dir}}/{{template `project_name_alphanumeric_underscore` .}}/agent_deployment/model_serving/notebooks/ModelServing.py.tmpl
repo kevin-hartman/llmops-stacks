@@ -39,7 +39,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install -qqqq databricks-agents
+# MAGIC %pip install -qqqq databricks-agents==1.1.0 mlflow==3.1.1
 
 # COMMAND ----------
 
@@ -64,11 +64,11 @@ dbutils.widgets.text(
     "agent_function_chatbot",
     label="Registered model name",
 )
-# Model version
+# Model alias
 dbutils.widgets.text(
-    "model_version",
-    "1",
-    label="Model Version",
+    "model_alias",
+    "agent_latest",
+    label="Model Alias",
 )
 # Scale to zero
 dbutils.widgets.dropdown("scale_to_zero", "True", ["True", "False"], "Scale to zero")
@@ -84,14 +84,14 @@ dbutils.library.restartPython()
 uc_catalog = dbutils.widgets.get("uc_catalog")
 schema = dbutils.widgets.get("schema")
 registered_model = dbutils.widgets.get("registered_model")
-model_version = dbutils.widgets.get("model_version")
+model_alias = dbutils.widgets.get("model_alias")
 scale_to_zero = bool(dbutils.widgets.get("scale_to_zero"))
 workload_size = dbutils.widgets.get("workload_size")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
 assert registered_model != "", "registered_model notebook parameter must be specified"
-assert model_version != "", "model_version notebook parameter must be specified"
+assert model_alias != "", "model_alias notebook parameter must be specified"
 assert scale_to_zero != "", "scale_to_zero notebook parameter must be specified"
 assert workload_size != "", "workload_size notebook parameter must be specified"
 
@@ -103,7 +103,6 @@ notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.ge
 %cd ../serving
 
 # COMMAND ----------
-
 # DBTITLE 1,Review Instructions
 instructions_to_reviewer = f"""### Instructions for Testing the our Chatbot assistant
 
@@ -123,24 +122,30 @@ Your inputs are invaluable for the development team. By providing detailed feedb
 Thank you for your time and effort in testing our assistant. Your contributions are essential to delivering a high-quality product to our end users."""
 
 # COMMAND ----------
+# DBTITLE 1,Create agent deployment
 
 from databricks import agents
+from mlflow import MlflowClient
 
-# Deploy to enable the Review APP and create an API endpoint
-# Note it deploys model on endpoint and enables inference table
+client = MlflowClient()
+
 model_name = f"{uc_catalog}.{schema}.{registered_model}"
+model_version = client.get_model_version_by_alias(model_name, model_alias).version
 
 if not agents.get_deployments(model_name):
     deployment_info = agents.deploy(model_name=model_name, model_version=int(model_version), scale_to_zero=scale_to_zero, workload_size=workload_size)
 else:
     deployment_info = agents.get_deployments(model_name)[0]
-    print(f"Deployment {model_name} already exists")
+    print(f"Deployment {model_name} already exists. Deleting and redeploying...")
+    agents.delete_deployment(model_name=model_name, model_version=deployment_info.model_version)
+    deployment_info = agents.deploy(model_name=model_name, model_version=int(model_version), scale_to_zero=scale_to_zero, workload_size=workload_size)
 
 
 # Add the user-facing instructions to the Review App
 agents.set_review_instructions(model_name, instructions_to_reviewer)
 
 # COMMAND ----------
+# DBTITLE 1, Wait for model serving endpoint to be ready
 
 # DBTITLE 1,Test Endpoint
 from serving import wait_for_model_serving_endpoint_to_be_ready
@@ -159,6 +164,7 @@ wait_for_model_serving_endpoint_to_be_ready(deployment_info.endpoint_name)
 # print(f"Share this URL with your stakeholders: {deployment_info.review_app_url}")
 
 # COMMAND ----------
+# DBTITLE 1,Test endpoint
 
 from mlflow.deployments import get_deploy_client
 

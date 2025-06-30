@@ -26,6 +26,11 @@ env:
   PROD_WORKSPACE_TOKEN: {{`${{ secrets.PROD_WORKSPACE_TOKEN }}`}}
   {{- end }}
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  
 jobs:
   staging:
     concurrency: {{ .input_project_name }}-staging-bundle-job
