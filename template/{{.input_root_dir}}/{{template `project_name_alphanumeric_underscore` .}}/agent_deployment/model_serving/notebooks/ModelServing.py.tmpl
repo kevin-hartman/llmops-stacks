@@ -137,7 +137,7 @@ if not agents.get_deployments(model_name):
 else:
     deployment_info = agents.get_deployments(model_name)[0]
     print(f"Deployment {model_name} already exists. Deleting and redeploying...")
-    agents.delete_deployment(model_name=model_name, model_version=deployment_info.version)
+    agents.delete_deployment(model_name=model_name, model_version=deployment_info.model_version)
     deployment_info = agents.deploy(model_name=model_name, model_version=int(model_version), scale_to_zero=scale_to_zero, workload_size=workload_size)
 
 

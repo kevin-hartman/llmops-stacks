@@ -82,6 +82,10 @@ dbutils.widgets.text(
 
 # COMMAND ----------
 
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
 uc_catalog = dbutils.widgets.get("uc_catalog")
 schema = dbutils.widgets.get("schema")
 eval_table = dbutils.widgets.get("eval_table")
@@ -96,10 +100,6 @@ assert experiment != "", "experiment notebook parameter must be specified"
 assert registered_model != "", "registered_model notebook parameter must be specified"
 assert model_alias != "", "model_alias notebook parameter must be specified"
 
-
-# COMMAND ----------
-
-dbutils.library.restartPython()
 
 # COMMAND ----------
 

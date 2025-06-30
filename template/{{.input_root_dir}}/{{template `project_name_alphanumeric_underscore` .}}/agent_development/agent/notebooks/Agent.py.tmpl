@@ -103,6 +103,7 @@ dbutils.widgets.text(
 )
 
 # COMMAND ----------
+
 dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -242,26 +243,6 @@ from databricks_langchain import (
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_core.tools import BaseTool
-from langgraph.graph import START, END, StateGraph
-from langgraph.prebuilt.tool_node import ToolNode
-from mlflow.langchain.chat_agent_langgraph import ChatAgentState, ChatAgentToolNode
-from mlflow.pyfunc import ChatAgent
-from mlflow.types.agent import (
-    ChatAgentChunk,
-    ChatAgentMessage,
-    ChatAgentResponse,
-    ChatContext,
-)
-from typing import Any, Generator, Optional, Sequence, Union, Literal
-import mlflow
-from databricks_langchain import (
-    ChatDatabricks,
-    UCFunctionToolkit,
-    VectorSearchRetrieverTool,
-)
-from langchain_core.language_models import LanguageModelLike
-from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_core.tools import BaseTool, tool
 from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt.tool_node import ToolNode
 from mlflow.langchain.chat_agent_langgraph import ChatAgentState, ChatAgentToolNode
@@ -522,12 +503,6 @@ final_state["messages"][-1].get('content')
 # MAGIC # loading the agent back for inference via mlflow.models.set_model()
 # MAGIC mlflow.langchain.autolog()
 # MAGIC agent = create_tool_calling_agent(model, tools, system_prompt)
-# MAGIC AGENT = LangGraphChatAgent(agent)
-# MAGIC mlflow.models.set_model(AGENT)
-# MAGIC # Create the agent object, and specify it as the agent object to use when
-# MAGIC # loading the agent back for inference via mlflow.models.set_model()
-# MAGIC mlflow.langchain.autolog()
-# MAGIC agent = create_tool_calling_agent(llm, tools, system_prompt)
 # MAGIC AGENT = LangGraphChatAgent(agent)
 # MAGIC mlflow.models.set_model(AGENT)
 
