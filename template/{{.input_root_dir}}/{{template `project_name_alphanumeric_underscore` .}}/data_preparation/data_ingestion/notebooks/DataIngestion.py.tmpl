@@ -17,22 +17,20 @@
 # * schema (required)                         - Name of the schema inside the Unity Catalog
 # * raw_data_table (required)                 - Name of the raw data table inside the database of the Unity Catalog
 # * data_source_url (required)                - URL of the data source. Default is "https://docs.databricks.com/en/doc-sitemap.xml"
+# * bundle_root (required)                    - Root of the bundle
 #
 # Widgets:
 # * Unity Catalog: Text widget to input the name of the Unity Catalog
 # * Schema: Text widget to input the name of the database inside the Unity Catalog
 # * Raw data table: Text widget to input the name of the raw data table inside the database of the Unity Catalog
 # * Data Source URL: Text widget to input the URL of the data source
+# * Root of bundle: Text widget to input the root of the bundle
 #
 # Usage:
 # 1. Set the appropriate values for the widgets.
 # 2. Run the pipeline to collect and store the raw documentation data.
 #
 ##################################################################################
-
-# COMMAND ----------
-
-# MAGIC %pip install -qqqq -r ../../../requirements.txt
 
 # COMMAND ----------
 
@@ -66,6 +64,13 @@ dbutils.widgets.text(
     label="Data Source URL",
 )
 
+# Bundle root
+dbutils.widgets.text(
+    "bundle_root",
+    "/",
+    label="Root of bundle",
+)
+
 # COMMAND ----------
 
 # DBTITLE 1,Define input and output variables
@@ -73,20 +78,19 @@ uc_catalog = dbutils.widgets.get("uc_catalog")
 schema = dbutils.widgets.get("schema")
 raw_data_table = dbutils.widgets.get("raw_data_table")
 data_source_url = dbutils.widgets.get("data_source_url")
+bundle_root = dbutils.widgets.get("bundle_root")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
 assert raw_data_table != "", "raw_data_table notebook parameter must be specified"
 assert data_source_url != "", "data_source_url notebook parameter must be specified"
+assert bundle_root != "", "bundle_root notebook parameter must be specified"
 
-# COMMAND ----------
+# Updating to bundle root
+import sys 
 
-# DBTITLE 1,Get notebook path
-import os
-
-notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-%cd $notebook_path
-%cd ../ingestion
+root = dbutils.widgets.get("bundle_root")
+sys.path.append(root)
 
 # COMMAND ----------
 
@@ -98,7 +102,7 @@ spark.sql(f"""USE `{uc_catalog}`.`{schema}`""")
 # COMMAND ----------
 
 # DBTITLE 1,Download and store data to UC
-from fetch_data import fetch_data_from_url
+from data_preparation.data_ingestion.ingestion.fetch_data import fetch_data_from_url
 
 if not spark.catalog.tableExists(f"{raw_data_table}") or spark.table(f"{raw_data_table}").isEmpty():
     # Download the data to a DataFrame 

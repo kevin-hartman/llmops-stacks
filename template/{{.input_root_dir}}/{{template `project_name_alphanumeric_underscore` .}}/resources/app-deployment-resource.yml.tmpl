@@ -7,6 +7,9 @@ common_permissions: &permissions
 resources:
   jobs:
     app_deployment_job:
+      parameters:
+        - name: bundle_root
+          default: ${workspace.file_path}
       name: ${bundle.target}-{{ .input_project_name }}-app-deployment-job
       tasks:
         - task_key: AppDeployment

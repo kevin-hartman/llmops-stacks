@@ -21,6 +21,8 @@
 # * experiment (required)                     - Name of the experiment to register the run under
 # * registered_model (required)               - Name of the model to register in mlflow
 # * max_words (required)                      - Maximum number of words to return in the response
+# * model_alias (required)                    - Alias to give to newly registered model
+# * bundle_root (required)                    - Root of the bundle
 #
 # Widgets:
 # * Unity Catalog: Text widget to input the name of the Unity Catalog
@@ -31,16 +33,14 @@
 # * Experiment: Text widget to input the name of the experiment to register the run under
 # * Registered model name: Text widget to input the name of the model to register in mlflow
 # * Max words: Text widget to input the maximum integer number of words to return in the response
+# * Model Alias: Text widget to input the alias of the model to register in mlflow
+# * Bundle root: Text widget to input the root of the bundle
 #
 # Usage:
 # 1. Set the appropriate values for the widgets.
 # 2. Run the pipeline to create and register an agent with tool calling.
 #
 ##################################################################################
-
-# COMMAND ----------
-
-# MAGIC %pip install -qqqq -r ../../agent_requirements.txt
 
 # COMMAND ----------
 
@@ -102,16 +102,12 @@ dbutils.widgets.text(
     label="Model Alias",
 )
 
-# COMMAND ----------
-
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
-import os
-notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-%cd $notebook_path
-%cd ../tools
+# Bundle root
+dbutils.widgets.text(
+    "bundle_root",
+    "/",
+    label="Root of bundle",
+)
 
 # COMMAND ----------
 
@@ -124,6 +120,7 @@ experiment = dbutils.widgets.get("experiment")
 registered_model = dbutils.widgets.get("registered_model")
 max_words = dbutils.widgets.get("max_words")
 model_alias = dbutils.widgets.get("model_alias")
+bundle_root = dbutils.widgets.get("bundle_root")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
@@ -134,6 +131,11 @@ assert experiment != "", "experiment notebook parameter must be specified"
 assert registered_model != "", "registered_model notebook parameter must be specified"
 assert max_words != "", "max_words notebook parameter must be specified"
 assert model_alias != "", "model_alias notebook parameter must be specified"
+assert bundle_root != "", "bundle_root notebook parameter must be specified"
+
+# Updating to bundle root
+import sys 
+sys.path.append(bundle_root)
 
 # COMMAND ----------
 
@@ -150,7 +152,7 @@ set_uc_function_client(client)
 # COMMAND ----------
 
 # DBTITLE 1,Function: execute_python_code
-from ai_tools import execute_python_code
+from agent_development.agent.tools import execute_python_code
 
 function_info = client.create_python_function(
     func=execute_python_code, catalog=uc_catalog, schema=schema, replace=True
@@ -163,7 +165,7 @@ client.execute_function(python_execution_function_name, {"code": "print(1+1)"})
 # COMMAND ----------
 
 # DBTITLE 1,Function: ai_function_name_sql
-from ai_tools import ask_ai_function
+from agent_development.agent.tools import ask_ai_function
 
 ask_ai_function_name = f"{uc_catalog}.{schema}.ask_ai"
 
@@ -174,7 +176,7 @@ result.value
 # COMMAND ----------
 
 # DBTITLE 1,Function: summarization_function
-from ai_tools import summarization_function
+from agent_development.agent.tools import summarization_function
 
 summarization_function_name = f"{uc_catalog}.{schema}.summarize"
 
@@ -185,7 +187,7 @@ client.execute_function(summarization_function_name, {"text": result.value, "max
 # COMMAND ----------
 
 # DBTITLE 1,Function: translate_function
-from ai_tools import translate_function
+from agent_development.agent.tools import translate_function
 
 translate_function_name = f"{uc_catalog}.{schema}.translate"
 
@@ -364,7 +366,7 @@ final_state["messages"][-1].get('content')
 # COMMAND ----------
 
 # DBTITLE 1,Log the model using MLflow
-# MAGIC %%writefile ../notebooks/app.py
+# MAGIC %%writefile app.py
 # MAGIC from typing import Any, Generator, Optional, Sequence, Union, Literal
 # MAGIC import mlflow
 # MAGIC from databricks_langchain import (

@@ -14,8 +14,18 @@ def execute_python_code(code: str) -> str:
 
     stdout = StringIO()
     sys.stdout = stdout
-    exec(code)
-    return stdout.getvalue()
+    try: 
+        exec(code)
+        return stdout.getvalue()
+    except Exception as e:
+        if "Spark" in str(e): 
+            return f"Python code execution failed: {e}. Databricks specific code is not allowed." 
+        if "pyspark" in str(e):
+            return f"Python code execution failed: {e}. Databricks specific code is not allowed." 
+        if "dbutils" in str(e): 
+            return f"Python code execution failed: {e}. Databricks specific code is not allowed." 
+        else:
+            return f"Python code execution failed: {e}. Use simple code + try again."
 
 # AI function name
 ask_ai_function = """CREATE OR REPLACE FUNCTION {ask_ai_function_name}(question STRING COMMENT 'question to ask')

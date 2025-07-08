@@ -7,6 +7,9 @@ common_permissions: &permissions
 resources:
   jobs:
     data_preprocessing_job:
+      parameters:
+        - name: bundle_root
+          default: ${workspace.file_path}
       name: ${bundle.target}-{{ .input_project_name }}-data-preprocessing-job
       tasks:
         - task_key: RawDataIngest
@@ -20,6 +23,7 @@ resources:
               data_source_url: https://docs.databricks.com/en/doc-sitemap.xml
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+          environment_key: data_prep_requirements
 
         - task_key: PreprocessRawData
           depends_on:
@@ -38,6 +42,7 @@ resources:
               hf_tokenizer_model: ${var.hf_tokenizer_model}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+          environment_key: data_prep_requirements
 
         - task_key: VectorSearchIndex
           depends_on:
@@ -48,10 +53,19 @@ resources:
               # TODO modify these arguments to reflect your setup.
               uc_catalog: ${var.uc_catalog}
               schema: ${var.schema}
-              preprocessed_data_table_name: ${var.preprocessed_data_table}
+              preprocessed_data_table: ${var.preprocessed_data_table}
               vector_search_endpoint: ${var.vector_search_endpoint}
               # git source information of current ML resource deployment. It will be persisted as part of the workflow run
               git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+          environment_key: data_prep_requirements
+
+      environments:
+        - environment_key: data_prep_requirements
+          spec:
+            client: "3"
+            dependencies: 
+              - "-r /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}/files/data_preparation/data_prep_requirements.txt"
+
       schedule:
         quartz_cron_expression: "0 0 5 * * ?" # daily at 5am
         timezone_id: UTC
