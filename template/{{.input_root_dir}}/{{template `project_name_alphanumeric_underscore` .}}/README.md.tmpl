@@ -22,7 +22,7 @@ This project contains the following components:
 | Component                  | Description                                                                                                                                                                                                                                                                                                                                             |
 |----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Agent Code                    | Example Agent project code, with unit tested Python modules and notebooks                                                                                                                                                                                                                                                                                  |
-| Agent Resources as Code | Agent pipeline resources (data preparation and agent development jobs with schedules, etc) configured and deployed through [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-cli.html)                                                                                              |
+| Agent Resources as Code | Agent pipeline resources (data preparation and agent development jobs with schedules, etc) configured and deployed through [Databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-cli.html)                                                                                              |
 
 contained in the following files:
 
@@ -33,7 +33,7 @@ agentops-example-project        <- Root directory. Both monorepo and polyrepo ar
 │   │
 │   ├── requirements.txt        <- Specifies Python dependencies for ML code (for example: model training, batch inference).
 │   │
-│   ├── databricks.yml          <- databricks.yml is the root bundle file for the ML project that can be loaded by databricks CLI bundles. It defines the bundle name, workspace URL and resource config component to be included.
+│   ├── databricks.yml          <- databricks.yml is the root bundle file for the ML project that can be loaded by Databricks CLI bundles. It defines the bundle name, workspace URL and resource config component to be included.
 │   │
 │   ├── data_preparation        <- Retrieves, stores, cleans, and vectorizes source data that is then ingested into a Vector Search index.
 │   │   │
@@ -76,9 +76,9 @@ agentops-example-project        <- Root directory. Both monorepo and polyrepo ar
 ### Deploy Agent code and resources to dev workspace using Bundles
 
 Refer to [Local development and dev workspace](./resources/README.md#local-development-and-dev-workspace)
-to use databricks CLI bundles to deploy ML code together with ML resource configs to dev workspace.
+to use Databricks CLI bundles to deploy ML code together with ML resource configs to dev workspace.
 
-This will allow you to develop locally and use databricks CLI bundles to deploy to your dev workspace to test out code and config changes.
+This will allow you to develop locally and use Databricks CLI bundles to deploy to your dev workspace to test out code and config changes.
 
 ### Develop on Databricks using Databricks Repos
 
