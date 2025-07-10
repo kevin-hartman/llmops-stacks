@@ -18,7 +18,8 @@
 # * eval_table (required)           - Name of the table containing the evaluation dataset
 # * experiment (required)           - Name of the experiment to register the run under
 # * registered_model (required)     - Name of the model registered in mlflow
-# * model_version (required)        - Model verison to deploy
+# * model_alias (required)          - Model alias to deploy
+# * bundle_root (required)          - Root of the bundle
 #
 # Widgets:
 # * Unity Catalog: Text widget to input the name of the Unity Catalog
@@ -26,17 +27,14 @@
 # * Evaluation Table: Text widget to input the name of the table containing the evaluation dataset
 # * Experiment: Text widget to input the name of the experiment to register the run under
 # * Registered model name: Text widget to input the name of the model to register in mlflow
-# * Model Vesion: Text widget to input the model version to deploy
+# * Model Alias: Text widget to input the model alias to deploy
+# * Bundle root: Text widget to input the root of the bundle
 #
 # Usage:
 # 1. Set the appropriate values for the widgets.
 # 2. Run to evaluate your agent.
 #
 ##################################################################################
-
-# COMMAND ----------
-
-# MAGIC %pip install -qqqq -r ../../agent_requirements.txt
 
 # COMMAND ----------
 
@@ -79,10 +77,12 @@ dbutils.widgets.text(
     "agent_latest",
     label="Model Alias",
 )
-
-# COMMAND ----------
-
-dbutils.library.restartPython()
+# Bundle root
+dbutils.widgets.text(
+    "bundle_root",
+    "/",
+    label="Root of bundle",
+)
 
 # COMMAND ----------
 
@@ -92,6 +92,7 @@ eval_table = dbutils.widgets.get("eval_table")
 experiment = dbutils.widgets.get("experiment")
 registered_model = dbutils.widgets.get("registered_model")
 model_alias = dbutils.widgets.get("model_alias")
+bundle_root = dbutils.widgets.get("bundle_root")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
@@ -99,15 +100,7 @@ assert eval_table != "", "eval_table notebook parameter must be specified"
 assert experiment != "", "experiment notebook parameter must be specified"
 assert registered_model != "", "registered_model notebook parameter must be specified"
 assert model_alias != "", "model_alias notebook parameter must be specified"
-
-
-# COMMAND ----------
-
-import os
-
-notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-%cd $notebook_path
-%cd ../evaluation
+assert bundle_root != "", "bundle_root notebook parameter must be specified"
 
 # COMMAND ----------
 
@@ -129,7 +122,7 @@ print(f"Evaluation dataset: {uc_catalog}.{schema}.{eval_table}")
 # COMMAND ----------
 
 # DBTITLE 1,Get Reference Documentation
-from evaluation import get_reference_documentation
+from agent_development.agent_evaluation.evaluation import get_reference_documentation
 
 reference_docs = get_reference_documentation(uc_catalog, schema, eval_table, spark)
 

@@ -17,18 +17,20 @@
 # * uc_catalog (required)           - Name of the Unity Catalog 
 # * schema (required)               - Name of the schema inside Unity Catalog 
 # * registered_model (required)     - Name of the model registered in mlflow
-# * model_version (required)        - Model verison to deploy
+# * model_alias (required)          - Model alias to deploy
 # * scale_to_zero (required)        - Specify if the endpoint should scale to zero when not in use.
 # * workload_size (required)        - Specify  the size of the compute scale out that corresponds with the number of requests this served 
 #                                     model can process at the same time. This number should be roughly equal to QPS x model run time.
+# * bundle_root (required)          - Root of the bundle
 #
 # Widgets:
 # * Unity Catalog: Text widget to input the name of the Unity Catalog
 # * Schema: Text widget to input the name of the database inside the Unity Catalog
 # * Registered model name: Text widget to input the name of the model to register in mlflow
-# * Model Vesion: Text widget to input the model version to deploy
+# * Model Alias: Text widget to input the model alias to deploy
 # * Scale to zero: Whether the clusters should scale to zero (requiring more time at startup after inactivity)
 # * Workload Size: Compute that matches estimated number of requests for the endpoint
+# * Bundle root: Text widget to input the root of the bundle
 #
 # Usage:
 # 1. Set the appropriate values for the widgets.
@@ -36,10 +38,6 @@
 # 3. Run to deploy endpoint.
 #
 ##################################################################################
-
-# COMMAND ----------
-
-# MAGIC %pip install -qqqq databricks-agents==1.1.0 mlflow==3.1.1
 
 # COMMAND ----------
 
@@ -75,6 +73,13 @@ dbutils.widgets.dropdown("scale_to_zero", "True", ["True", "False"], "Scale to z
 # Workdload size
 dbutils.widgets.dropdown("workload_size", "Small", ["Small", "Medium", "Large"], "Workload Size")
 
+# Bundle root
+dbutils.widgets.text(
+    "bundle_root",
+    "/",
+    label="Root of bundle",
+)
+
 # COMMAND ----------
 
 dbutils.library.restartPython()
@@ -87,6 +92,7 @@ registered_model = dbutils.widgets.get("registered_model")
 model_alias = dbutils.widgets.get("model_alias")
 scale_to_zero = bool(dbutils.widgets.get("scale_to_zero"))
 workload_size = dbutils.widgets.get("workload_size")
+bundle_root = dbutils.widgets.get("bundle_root")
 
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
@@ -94,13 +100,13 @@ assert registered_model != "", "registered_model notebook parameter must be spec
 assert model_alias != "", "model_alias notebook parameter must be specified"
 assert scale_to_zero != "", "scale_to_zero notebook parameter must be specified"
 assert workload_size != "", "workload_size notebook parameter must be specified"
+assert bundle_root != "", "bundle_root notebook parameter must be specified"
 
-# COMMAND ----------
+# Updating to bundle root
+import sys 
 
-import os
-notebook_path =  '/Workspace/' + os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-%cd $notebook_path
-%cd ../serving
+root = dbutils.widgets.get("bundle_root")
+sys.path.append(root)
 
 # COMMAND ----------
 # DBTITLE 1,Review Instructions
@@ -148,7 +154,7 @@ agents.set_review_instructions(model_name, instructions_to_reviewer)
 # DBTITLE 1, Wait for model serving endpoint to be ready
 
 # DBTITLE 1,Test Endpoint
-from serving import wait_for_model_serving_endpoint_to_be_ready
+from agent_deployment.model_serving.serving import wait_for_model_serving_endpoint_to_be_ready
 wait_for_model_serving_endpoint_to_be_ready(deployment_info.endpoint_name)
 
 # COMMAND ----------
