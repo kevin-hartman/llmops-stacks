@@ -1,6 +1,6 @@
 {
-  "welcome_message": "Welcome to MLOps Stacks. For detailed information on project generation, see the README at https://github.com/databricks/mlops-stacks/blob/main/README.md.",
-  "min_databricks_cli_version": "v0.221.0",
+  "welcome_message": "Welcome to AI Agent Ops (Composable AI Ops) Stacks. For detailed information on project generation, see the README at https://github.com/databricks/mlops-stacks/blob/main/README.md.",
+  "min_databricks_cli_version": "v0.256.0",
   "properties": {
     "input_setup_cicd_and_project": {
       "order": 1,
@@ -12,7 +12,7 @@
     "input_project_name": {
       "order": 2,
       "type": "string",
-      "default": "my_mlops_project",
+      "default": "my_agent_project",
       "description": "\nProject Name. Default",
       "pattern": "^[^ .\\\\/]{3,}$",
       "pattern_match_failure_message": "Project name must be at least 3 characters long and cannot contain the following characters: \"\\\", \"/\", \" \" and \".\".",
@@ -49,7 +49,7 @@
       "type": "string",
       "description": "\nSelect CICD platform",
       "default": "github_actions",
-      "enum": ["github_actions", "github_actions_for_github_enterprise_servers", "azure_devops"],
+      "enum": ["github_actions", "github_actions_for_github_enterprise_servers", "azure_devops", "gitlab"],
       "skip_prompt_if": {
         "properties": {
           "input_setup_cicd_and_project": {
@@ -127,143 +127,40 @@
         }
       }
     },
-    "input_include_models_in_unity_catalog": {
+    "input_catalog_name": {
       "order": 11,
       "type": "string",
-      "description": "\nWhether to use the Model Registry with Unity Catalog",
-      "default": "no",
-      "enum": ["yes", "no"]
-    },
-    "input_staging_catalog_name": {
-      "order": 12,
-      "type": "string",
-      "description": "\nName of the catalog in Unity Catalog that will host the staging UC resources. \nThis catalog must already exist and service principals must have access to it.\nDefault",
-      "default": "staging",
+      "description": "\nName of the catalog in Unity Catalog that will host the UC resources. \nThis catalog must already exist and service principals must have access to it.\nDefault",
+      "default": "ai_agent_stacks",
       "skip_prompt_if": {
-        "anyOf": [
-          {
-            "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "no"
-              }
-            }
-          },
-          {
-            "properties": {
-              "input_setup_cicd_and_project": {
-                "const": "Project_Only"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "input_prod_catalog_name": {
-      "order": 13,
-      "type": "string",
-      "description": "\nName of the catalog in Unity Catalog that will host the production UC resources.\nThis catalog must already exist and service principals must have access to it.\nDefault",
-      "default": "prod",
-      "skip_prompt_if": {
-        "anyOf": [
-          {
-            "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "no"
-              }
-            }
-          },
-          {
-            "properties": {
-              "input_setup_cicd_and_project": {
-                "const": "Project_Only"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "input_test_catalog_name": {
-      "order": 14,
-      "type": "string",
-      "description": "\nName of the catalog in Unity Catalog that will be used for integration tests.\nThis catalog must already exist and service principals must have access to it.\nDefault",
-      "default": "test",
-      "skip_prompt_if": {
-        "anyOf": [
-          {
-            "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "no"
-              }
-            }
-          },
-          {
-            "properties": {
-              "input_setup_cicd_and_project": {
-                "const": "Project_Only"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "input_schema_name": {
-      "order": 15,
-      "type": "string",
-      "description": "\nName of schema to use when registering a model in Unity Catalog.\nThis schema must already exist and service principals must have access.\nWe recommend using the project name.\nDefault",
-      "default": "{{if (eq .input_include_models_in_unity_catalog `no`)}}schema{{else}}{{ .input_project_name }}{{end}}",
-      "pattern": "^[^ .\\-\\/]*$",
-      "pattern_match_failure_message": "Valid schema names cannot contain any of the following characters: \" \", \".\", \"-\", \"\\\", \"/\"",
-      "skip_prompt_if": {
-        "anyOf":[
-          {
-            "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "no"
-              }
-            }
-          },
-          {
             "properties": {
               "input_setup_cicd_and_project": {
                 "const": "CICD_Only"
               }
             }
-          }
-        ]
+      }
+    },
+    "input_schema_name": {
+      "order": 14,
+      "type": "string",
+      "description": "\nName of schema to use when creating tables and registering a model in Unity Catalog.\nThis schema must already exist and service principals must have access.\nWe recommend using the project name.\nDefault",
+      "default": "ai_agent_ops",
+      "pattern": "^[^ .\\-\\/]*$",
+      "pattern_match_failure_message": "Valid schema names cannot contain any of the following characters: \" \", \".\", \"-\", \"\\\", \"/\"",
+      "skip_prompt_if": {
+            "properties": {
+              "input_setup_cicd_and_project": {
+                "const": "CICD_Only"
+              }
+            }
       }
     },
     "input_unity_catalog_read_user_group": {
-      "order": 16,
+      "order": 15,
       "type": "string",
       "default": "account users",
       "description": "\nUser group name to give EXECUTE privileges to models in Unity Catalog (UC).\nIt must exist in UC with access granted to the staging and prod workspaces.\nDefault",
       "skip_prompt_if": {
-        "anyOf":[
-          {
-            "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "no"
-              }
-            }
-          },
-          {
-            "properties": {
-              "input_setup_cicd_and_project": {
-                "const": "CICD_Only"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "input_inference_table_name": {
-      "order": 17,
-      "type": "string",
-      "description": "\nFully qualified name of inference table to attach monitoring to.\nThis table must already exist and service principals must have access.",
-      "default": "dev.{{ .input_project_name }}.predictions",
-      "pattern": "^[^ .\\-\\/]+(\\.[^ .\\-\\/]+){2}$",
-      "pattern_match_failure_message": "Fully qualified Unity Catalog table names must have catalog, schema, and table separated by \".\" and each cannot contain any of the following characters: \" \", \".\", \"-\", \"\\\", \"/\"",
-      "skip_prompt_if": {
             "properties": {
               "input_setup_cicd_and_project": {
                 "const": "CICD_Only"
@@ -271,46 +168,38 @@
             }
       }
     },
-    "input_include_feature_store": {
-      "order": 18,
+    "input_docker_image": {
+      "order": 16,
       "type": "string",
-      "description": "\nWhether to include Feature Store",
-      "default": "no",
-      "enum": ["no", "yes"],
-      "skip_prompt_if": {
-        "properties": {
-          "input_setup_cicd_and_project": {
-            "const": "CICD_Only"
-          }
-        }
-      }
-    },
-    "input_include_mlflow_recipes": {
-      "order": 19,
-      "type": "string",
-      "description": "\nWhether to include MLflow Recipes",
-      "default": "no",
-      "enum": ["no", "yes"],
+      "description": "\nDocker image for the execution of Gitlab pipelines",
+      "default": "databricksfieldeng/mlopsstacks:latest",
       "skip_prompt_if": {
         "anyOf":[
           {
             "properties": {
-              "input_include_models_in_unity_catalog": {
-                "const": "yes"
+              "input_cicd_platform": {
+                "const": "github_actions"
               }
             }
           },
           {
             "properties": {
-              "input_include_feature_store": {
-                "const": "yes"
+              "input_cicd_platform": {
+                "const": "github_actions_for_github_enterprise_servers"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input_cicd_platform": {
+                "const": "azure_devops"
               }
             }
           },
           {
             "properties": {
               "input_setup_cicd_and_project": {
-                "const": "CICD_Only"
+                "const": "Project_Only"
               }
             }
           }
@@ -318,5 +207,5 @@
       }
     }
   },
-  "success_message" : "\n*** Your MLOps Stack has been created in the '{{.input_root_dir}}{{if not (eq .input_setup_cicd_and_project `CICD_Only`) }}/{{.input_project_name}}{{end}}' directory! ***\n\nPlease refer to the README.md for further instructions on getting started."
+  "success_message" : "\n*** Your AI Agent Ops Stack has been created in the '{{.input_root_dir}}{{if not (eq .input_setup_cicd_and_project `CICD_Only`) }}/{{.input_project_name}}{{end}}' directory! ***\n\nPlease refer to the README.md for further instructions on getting started."
 }

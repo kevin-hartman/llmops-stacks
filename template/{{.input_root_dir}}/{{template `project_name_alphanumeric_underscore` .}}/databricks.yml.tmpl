@@ -3,46 +3,91 @@ bundle:
   name: {{ .input_project_name }}
 
 variables:
-  experiment_name:
-    description: Experiment name for the model training.
-    default: /Users/${workspace.current_user.userName}/${bundle.target}-{{template `experiment_base_name` .}}
-  model_name:
-    description: Model name for the model training.
-    {{ if (eq .input_include_models_in_unity_catalog `no`) }}default: ${bundle.target}-{{template `model_name` .}}
-    {{- else -}}default: {{template `model_name` .}}{{end}}
+  uc_catalog:
+    description: Unity Catalog used to store data and artifacts.
+    default: {{ .input_catalog_name }}
+  schema: 
+    description: "Schema in Unity Catalog."
+    default: {{ .input_schema_name }}
+  raw_data_table:
+    description: "Table in Unity Catalog to store raw data."
+    default: raw_documentation
+  data_source_url: 
+      description: "The url to scrape."
+      default: https://docs.databricks.com/en/doc-sitemap.xml
+  preprocessed_data_table: 
+      description: "Table in Unity Catalog to store preprocessed data."
+      default: databricks_documentation
+  min_chunk_size: 
+      description: "Minimum size of chunks for vectorization."
+      default: 20
+  max_chunk_size: 
+      description: "Maximum size of chunks for vectorization."
+      default: 500
+  chunk_overlap: 
+      description: "Overlap of chunks for vectorization."
+      default: 50
+  hf_tokenizer_model: 
+      description: "Hugging Face Tokenizer Model to use for vectorization."
+      default: "openai-community/openai-gpt"
+  vector_search_endpoint:
+    description: "Vector Search endpoint to create."
+    default: ai_agent_endpoint
+  vector_search_index:
+    description: "Vector Search index to populate."
+    default: databricks_documentation_vs_index
+  experiment:
+    description: "Experiment to log run under."
+    default: /Users/${workspace.current_user.userName}/agent_function_chatbot
+  registered_model:
+    description: "Name of agent model to register."
+    default: agent_function_chatbot
+  max_words:
+    description: "Maximum number of words for agent to respond with."
+    default: 20
+  agent_model_endpoint:
+    description: "Foundation model endpoint to use for agent."
+    default: "databricks-meta-llama-3-3-70b-instruct"
+  eval_table:
+    description: "Table in Unity Catalog to store evaluation data."
+    default: "databricks_documentation_eval"
+  model_alias:
+    description: "Model alias to use for trained model"
+    default: agent_latest
+  scale_to_zero:
+    description: "Scale model endpoint to zero when not in use."
+    default: True
+  workload_size:
+    description: "Size of compute for anticipated number of concurrent requests."
+    default: "Small"
+  chatbot_name: 
+    description: "Name of the Databricks App"
+    default: "dash-chatbot-app"
 
 include:
-  # Resources folder contains ML artifact resources for the ML project that defines model and experiment
-  # And workflows resources for the ML project including model training -> validation -> deployment,
-  # {{- if (eq .input_include_feature_store `yes`) }} feature engineering, {{ end }} batch inference, quality monitoring, metric refresh, alerts and triggering retraining
-  - ./resources/batch-inference-workflow-resource.yml
-  - ./resources/ml-artifacts-resource.yml
-  - ./resources/model-workflow-resource.yml
-  {{- if (eq .input_include_feature_store `yes`) }}
-  - ./resources/feature-engineering-workflow-resource.yml
-  {{- end }}
-  # TODO: uncomment once monitoring inference table has been created
-  # - ./resources/monitoring-resource.yml
+  # Resources folder contains Agent artifact resources for the Agent project that defines the agent
+  # and workflows resources for data preparation -> agent creation & evaluation -> deployment
+  - ./resources/data-preparation-resource.yml
+  - ./resources/agents-artifacts-resource.yml
+  - ./resources/agent-resource.yml
+  - ./resources/app-deployment-resource.yml
 
 # Deployment Target specific values for workspace
 targets:
-  dev: {{ if (eq .input_include_models_in_unity_catalog `yes`)}} # UC Catalog Name {{ end }}
+  dev:
     default: true
     workspace:
       # TODO: add dev workspace URL
       host:
 
-{{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}
-
-  {{ .input_staging_catalog_name }}:
+  staging:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
 
-  {{ .input_prod_catalog_name }}:
+  prod:
     workspace:
       host: {{template `databricks_prod_workspace_host` .}}
 
-  {{ .input_test_catalog_name }}:
+  test: 
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
-{{ end }}
