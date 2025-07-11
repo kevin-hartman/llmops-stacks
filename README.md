@@ -13,7 +13,7 @@ The default stack in this repo includes three modular components:
 | Component                   | Description                                                                                                                                                           | Why it's useful                                                                                                                                                                         |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Agent Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/)                     | Example Agent project structure ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/data_preparation) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/deployment/agent_development), etc), with unit tested Python modules and notebooks                                                                                           | Quickly iterate on Agent problems, without worrying about refactoring your code into tested modules for productionization later on.                                                        |
-| [Agent Resources as Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources) | Agent pipeline resources ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/data-preparation-resource.yml.tmpl) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/agent_resource.yml.tmpl) jobs, etc) defined through [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-cli.html)    | Govern, audit, and deploy changes to your Agent resources (e.g. "use a larger instance type for automated model retraining") through pull requests, rather than adhoc changes made via UI. |
+| [Agent Resources as Code](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources) | Agent pipeline resources ([data preparation](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/data-preparation-resource.yml.tmpl) and [agent development](template/{{.input_root_dir}}/{{template%20`project_name_alphanumeric_underscore`%20.}}/resources/agent_resource.yml.tmpl) jobs, etc) defined through [Databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-cli.html)    | Govern, audit, and deploy changes to your Agent resources (e.g. "use a larger instance type for automated model retraining") through pull requests, rather than adhoc changes made via UI. |
 | CI/CD ([GitHub Actions](template/{{.input_root_dir}}/.github/) or [Azure DevOps](template/{{.input_root_dir}}/.azure/))                       | [GitHub Actions](https://docs.github.com/en/actions) or [Azure DevOps](https://azure.microsoft.com/en-us/products/devops) workflows to test and deploy code and resources | Ship code faster and with confidence: ensure all production changes are performed through automation and that only tested code is deployed to prod                                   |
 
 See the [FAQ](#FAQ) for questions on common use cases.
@@ -35,7 +35,7 @@ Data scientists can iterate on Agent code and file pull requests (PRs). This wil
 
 [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) contains [Databricks asset bundle templates](https://docs.databricks.com/en/dev-tools/bundles/templates.html) for the purpose of project creation.
 
-Please follow [the instruction](https://docs.databricks.com/en/dev-tools/cli/databricks-cli-ref.html#install-the-cli) to install and set up databricks CLI. Releases of databricks CLI can be found in the [releases section](https://github.com/databricks/cli/releases) of databricks/cli repository.
+Please follow [the instruction](https://docs.databricks.com/en/dev-tools/cli/databricks-cli-ref.html#install-the-cli) to install and set up Databricks CLI. Releases of Databricks CLI can be found in the [releases section](https://github.com/databricks/cli/releases) of Databricks/cli repository.
 
 [Databricks asset bundles](https://docs.databricks.com/en/dev-tools/bundles/index.html) and [Databricks asset bundle templates](https://docs.databricks.com/en/dev-tools/bundles/templates.html) are in public preview.
 
@@ -116,7 +116,7 @@ for details on how to do this.
 
 ### Does the AgentOps Stacks cover data (ETL) pipelines?
 
-Since AgentOps Stacks is based on [databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-commands.html),
+Since AgentOps Stacks is based on [Databricks CLI bundles](https://docs.databricks.com/dev-tools/cli/bundle-commands.html),
 it's not limited only to Agent workflows and resources - it works for resources across the Databricks Lakehouse. For instance, while the existing Agent code samples contain data ingestion, agent development, and agent deployment workflows, you can use it for Delta Live Tables pipelines as well.
 
 ### How can I provide feedback?
@@ -135,7 +135,7 @@ the `{{.input_root_dir}}` directory.
 ### Installing development requirements
 
 To run tests, install [actionlint](https://github.com/rhysd/actionlint),
-[databricks CLI](https://docs.databricks.com/dev-tools/cli/databricks-cli.html), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), and
+[Databricks CLI](https://docs.databricks.com/dev-tools/cli/databricks-cli.html), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), and
 [act](https://github.com/nektos/act), then install the Python
 dependencies listed in `dev-requirements.txt`:
 

@@ -16,7 +16,7 @@ This project contains the following components:
 |----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 {{- if (eq .input_setup_cicd_and_project `CICD_and_Project`)}}
 | Agent Code                    | Example Agent project code and notebooks                                                                                                                                                                                                                                                                             |
-| Agent Resources as Code | Agent pipeline resources (data preparation and development jobs with schedules, etc) configured and deployed through [databricks CLI bundles]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/bundle-cli.html")) }})                                                                                              |
+| Agent Resources as Code | Agent pipeline resources (data preparation and development jobs with schedules, etc) configured and deployed through [Databricks CLI bundles]({{ template `generate_doc_link` (map (pair "cloud" .input_cloud) (pair "path" "dev-tools/cli/bundle-cli.html")) }})                                                                                              |
 {{- end }}
 | CI/CD                      | {{ if (eq .input_cicd_platform `github_actions`) }}[GitHub Actions](https://github.com/actions) workflows  to test and deploy code and resources
                                {{ else if (eq .input_cicd_platform `azure_devops`) }}[Azure DevOps Pipelines](https://learn.microsoft.com/en-us/azure/devops/pipelines) to test and deploy code and resources
@@ -33,7 +33,7 @@ contained in the following files:
 │   │
 │   ├── requirements.txt        <- Specifies Python dependencies for code.
 │   │
-│   ├── databricks.yml          <- databricks.yml is the root bundle file for the ML project that can be loaded by databricks CLI bundles. It defines the bundle name, workspace URL and resource config component to be included.
+│   ├── databricks.yml          <- databricks.yml is the root bundle file for the ML project that can be loaded by Databricks CLI bundles. It defines the bundle name, workspace URL and resource config component to be included.
 │   │
 │   ├── data_preparation        <- Retrieves, stores, cleans, and vectorizes source data that is then ingested into a Vector Search index.
 │   │   │
@@ -71,11 +71,11 @@ contained in the following files:
 {{- end }}
 │
 {{- if or (eq .input_cicd_platform `github_actions`) (eq .input_cicd_platform `github_actions_for_github_enterprise_servers`) }}
-├── .github                     <- Configuration folder for CI/CD using GitHub Actions. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .github                     <- Configuration folder for CI/CD using GitHub Actions. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with Databricks CLI bundles.{{ end }}
 {{- else if (eq .input_cicd_platform `azure_devops`) }}
-├── .azure                      <- Configuration folder for CI/CD using Azure DevOps Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .azure                      <- Configuration folder for CI/CD using Azure DevOps Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with Databricks CLI bundles.{{ end }}
 {{- else if (eq .input_cicd_platform `gitlab`) }}
-├── .gitlab                      <- Configuration folder for CI/CD using Gitlab Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with databricks CLI bundles.{{ end }}
+├── .gitlab                      <- Configuration folder for CI/CD using Gitlab Pipelines. {{ if (eq .input_setup_cicd_and_project `CICD_and_Project`)}} The CI/CD workflows deploy resources defined in the `./resources/*` folder with Databricks CLI bundles.{{ end }}
 {{- end }}
 │
 ├── docs                        <- Contains documentation for the repo.

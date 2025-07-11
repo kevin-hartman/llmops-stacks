@@ -30,6 +30,12 @@ dbutils.widgets.text(
     "dash-chatbot-app",
     label="App Name",
 )
+# Name of the Agent Model Endpoint
+dbutils.widgets.text(
+    "agent_model_endpoint",
+    "databricks-meta-llama-3-3-70b-instruct",
+    label="Agent Model Endpoint",
+)
 
 # COMMAND ----------
 
@@ -41,18 +47,20 @@ app_name = dbutils.widgets.get("app_name")
 uc_catalog = dbutils.widgets.get("uc_catalog")
 schema = dbutils.widgets.get("schema")
 registered_model = dbutils.widgets.get("registered_model")
+agent_model_endpoint = dbutils.widgets.get("agent_model_endpoint")
 
 assert app_name != "", "app_name notebook parameter must be specified"
 assert uc_catalog != "", "uc_catalog notebook parameter must be specified"
 assert schema != "", "schema notebook parameter must be specified"
 assert registered_model != "", "registered_model notebook parameter must be specified"
+assert agent_model_endpoint != "", "agent_model_endpoint notebook parameter must be specified"
 
 # COMMAND ----------
 
 import yaml 
 import os
 
-endpoint_name = "databricks-meta-llama-3-3-70b-instruct"
+endpoint_name = agent_model_endpoint
 
 yaml_app_config = {"command": ["python", "app.py"],
                     "env": [{"name": "SERVING_ENDPOINT", "value": endpoint_name}]
