@@ -1,8 +1,57 @@
 # CI/CD Workflow Definitions
-This directory contains CI/CD workflow definitions using [GitHub Actions](https://docs.github.com/en/actions),
-under ``workflows``. These workflows cover testing and deployment of both ML code (for model training, batch inference, etc) and 
-Databricks ML resource definitions. 
 
-To set up CI/CD for a new project,
-please refer to [Setting up CI/CD](<../../README.md#Setting up CI/CD>) and following the [MLOps Setup Guide](../../docs/mlops-setup.md)
-to make sure your `WORKFLOW_TOKEN` secret has been properly set up with `Workflow` permissions.
+This directory contains CI/CD workflow definitions using [GitHub Actions](https://docs.github.com/en/actions).
+These workflows cover testing and deployment of ML code, Databricks bundle resources (models, experiments, apps), and infrastructure.
+
+## Active Workflows
+
+### Core MLOps Workflows
+
+1. **{{.input_project_name}}-bundle-ci.yml** - Bundle validation on PRs
+   - Triggers: Pull requests, manual dispatch
+   - Validates bundle configuration for staging and prod targets
+   - Runs on PR to ensure bundle is valid before merge
+
+2. **{{.input_project_name}}-bundle-cd-staging.yml** - Continuous deployment to staging
+   - Triggers: Push to `main` branch (any changes), manual dispatch
+   - Deploys bundle to staging environment
+   - Includes models, experiments, jobs, and app deployment
+
+3. **{{.input_project_name}}-bundle-cd-prod.yml** - Production deployment
+   - Triggers: Manual dispatch only
+   - Deploys bundle to production environment
+   - Requires manual approval for safety
+
+4. **{{.input_project_name}}-run-tests.yml** - Run tests
+   - Triggers: Pull requests, manual dispatch
+   - Executes test suite to validate changes
+
+5. **lint-cicd-workflow-files.yml** - Workflow linting
+   - Triggers: Pull requests affecting workflow files
+   - Validates GitHub Actions workflow syntax
+
+### Setup Workflow
+
+6. **deploy-cicd.yml** - Deploy CI/CD setup
+   - Triggers: Manual dispatch only
+   - One-time workflow to initialize CI/CD infrastructure
+   - Sets up workspace configuration and secrets
+
+## App Deployment
+
+**Note**: The Databricks App is deployed automatically as part of the bundle deployment workflows above (via `app-resource.yml`).
+No separate app deployment workflow is needed.
+
+## Setup Instructions
+
+To set up CI/CD for this project:
+1. Refer to [Setting up CI/CD](<../../README.md#Setting up CI/CD>)
+2. Follow the [MLOps Setup Guide](../../docs/mlops-setup.md)
+3. Ensure `WORKFLOW_TOKEN` secret has `Workflow` permissions
+4. Configure Azure service principal secrets for staging and prod:
+   - `STAGING_AZURE_SP_TENANT_ID`
+   - `STAGING_AZURE_SP_APPLICATION_ID`
+   - `STAGING_AZURE_SP_CLIENT_SECRET`
+   - `PROD_AZURE_SP_TENANT_ID`
+   - `PROD_AZURE_SP_APPLICATION_ID`
+   - `PROD_AZURE_SP_CLIENT_SECRET`

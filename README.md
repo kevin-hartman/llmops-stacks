@@ -31,7 +31,7 @@ Data scientists can iterate on Agent code and file pull requests (PRs). This wil
 
 ### Prerequisites
  - Python 3.8+
- - [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) >= v0.256.0
+ - [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) >= v0.266.0
 
 [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html) contains [Databricks asset bundle templates](https://docs.databricks.com/en/dev-tools/bundles/templates.html) for the purpose of project creation.
 
