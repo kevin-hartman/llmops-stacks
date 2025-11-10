@@ -3,66 +3,54 @@ bundle:
   name: {{ .input_project_name }}
 
 variables:
+  # Unity Catalog infrastructure
   uc_catalog:
     description: Unity Catalog used to store data and artifacts.
     default: {{ .input_catalog_name }}
-  schema: 
+  schema:
     description: "Schema in Unity Catalog."
     default: {{ .input_schema_name }}
+
+  # Data tables
   raw_data_table:
     description: "Table in Unity Catalog to store raw data."
     default: raw_documentation
-  data_source_url: 
-      description: "The url to scrape."
-      default: https://docs.databricks.com/en/doc-sitemap.xml
-  preprocessed_data_table: 
+  preprocessed_data_table:
       description: "Table in Unity Catalog to store preprocessed data."
       default: databricks_documentation
-  min_chunk_size: 
-      description: "Minimum size of chunks for vectorization."
-      default: 20
-  max_chunk_size: 
-      description: "Maximum size of chunks for vectorization."
-      default: 500
-  chunk_overlap: 
-      description: "Overlap of chunks for vectorization."
-      default: 50
-  hf_tokenizer_model: 
-      description: "Hugging Face Tokenizer Model to use for vectorization."
-      default: "openai-community/openai-gpt"
+  eval_table:
+    description: "Table in Unity Catalog to store evaluation data."
+    default: "databricks_documentation_eval"
+
+  # Vector search infrastructure
   vector_search_endpoint:
     description: "Vector Search endpoint to create."
     default: ai_agent_endpoint
   vector_search_index:
     description: "Vector Search index to populate."
     default: databricks_documentation_vs_index
+
+  # MLflow model registration
   experiment:
     description: "Experiment to log run under."
-    default: /Users/${workspace.current_user.userName}/agent_function_chatbot
+    default: /Users/${workspace.current_user.userName}/${bundle.name}_agent
   registered_model:
     description: "Name of agent model to register."
-    default: agent_function_chatbot
-  max_words:
-    description: "Maximum number of words for agent to respond with."
-    default: 20
-  agent_model_endpoint:
-    description: "Foundation model endpoint to use for agent."
-    default: "databricks-meta-llama-3-3-70b-instruct"
-  eval_table:
-    description: "Table in Unity Catalog to store evaluation data."
-    default: "databricks_documentation_eval"
+    default: ${bundle.name}_agent
   model_alias:
     description: "Model alias to use for trained model"
     default: agent_latest
-  scale_to_zero:
-    description: "Scale model endpoint to zero when not in use."
-    default: True
-  workload_size:
-    description: "Size of compute for anticipated number of concurrent requests."
-    default: "Small"
-  chatbot_name: 
+
+  # Deployment configuration
+  agent_serving_endpoint:
+    description: "Name of agent model serving endpoint (optional). If empty, agents.deploy() will auto-generate. Must NOT be pre-created in bundle."
+    default: ""
+  mlflow_experiment_path:
+    description: "Non-Git MLflow experiment path for agent tracing. If empty, auto-generated."
+    default: ""
+  app_name:
     description: "Name of the Databricks App"
-    default: "dash-chatbot-app"
+    default: "{{template `project_name_alphanumeric_underscore` .}}-chatbot-app"
 
 include:
   # Resources folder contains Agent artifact resources for the Agent project that defines the agent
@@ -70,7 +58,15 @@ include:
   - ./resources/data-preparation-resource.yml
   - ./resources/agents-artifacts-resource.yml
   - ./resources/agent-resource.yml
-  - ./resources/app-deployment-resource.yml
+  - ./resources/app-resource.yml  # Databricks App deployed as bundle resource
+
+# Sync app files to workspace for app deployment
+sync:
+  include:
+    - agent_deployment/chat_interface_deployment/app.py
+    - agent_deployment/chat_interface_deployment/DatabricksChatbot.py
+    - agent_deployment/chat_interface_deployment/utils.py
+    - agent_deployment/chat_interface_deployment/app.yaml
 
 # Deployment Target specific values for workspace
 targets:
@@ -79,15 +75,23 @@ targets:
     workspace:
       # TODO: add dev workspace URL
       host:
+    variables:
+      agent_serving_endpoint: "{{template `project_name_alphanumeric_underscore` .}}-dev-agent-endpoint"
 
   staging:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
+    variables:
+      agent_serving_endpoint: "{{template `project_name_alphanumeric_underscore` .}}-staging-agent-endpoint"
 
   prod:
     workspace:
       host: {{template `databricks_prod_workspace_host` .}}
+    variables:
+      agent_serving_endpoint: "{{template `project_name_alphanumeric_underscore` .}}-prod-agent-endpoint"
 
-  test: 
+  test:
     workspace:
       host: {{template `databricks_staging_workspace_host` .}}
+    variables:
+      agent_serving_endpoint: "{{template `project_name_alphanumeric_underscore` .}}-test-agent-endpoint"
